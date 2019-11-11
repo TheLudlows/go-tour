@@ -64,5 +64,8 @@ type struct_variable_type struct {
    member definition
 }
 ```
+#### 类型方法
+
+
 
 
