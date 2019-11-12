@@ -55,6 +55,7 @@ println(addFunc(999 , 1))
 - 函数定义中的变量称为形式参数
 
 #### 结构体
+Go语言的结构体(struct)和其他语言的类(class)有同等的地位
 定义格式
 ```go
 type struct_variable_type struct {
@@ -65,7 +66,31 @@ type struct_variable_type struct {
 }
 ```
 #### 类型方法
+在Go语言中，可以给任意类型(包括内置类型，但不包括指针类型)添加相应的方法，
+```go
+type Rect struct { 
+    x, y float64
+    width, height float64
+}
+func (r *Rect) Area() float64 { 
+    return r.width * r.height
+}
+```
+#### 可见性
+没有private、protected、public这样的关键字。要使某个符号对其他包可见，需要将该符号定义为以大写字母开头。
+成员方法的可访问性遵循同样的规则
 
+#### 面向对象
+一个类只需要实现了接口要求的所有函数，我们就说这个类实现了该接口，
+```go
+type IFile interface {
+    Read(buf []byte) (n int, err error)
+    Write(buf []byte) (n int, err error)
+    Seek(off int64, whence int) (pos int64, err error) Close() error
+}
+```
 
+任何对象实例都满足空接口interface{}
 
+var v1 interface{} = 1
 
