@@ -87,3 +87,6 @@ type IFile interface {
 
 `var v1 interface{} = 1`
 
+#### 异常Error defer panic recover
+errror接口时内部定义的，使用只需要实现Error方法，具体看：[Error.go](src/basic/Error.go)
+defer类似于Java中的final语句块，即被defer申明的语句一定会被执行，并且可以声明多个方法，执行顺序为先进后出。

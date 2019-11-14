@@ -17,11 +17,12 @@ func main() {
 	println(addFunc(999, 1))
 	p := people{100, "four"}
 	pAddress := &p
-	fmt.Println(p.name, pAddress.age)
+	eq := &(*pAddress) == pAddress
+	fmt.Println(p.name, eq)
 }
 
 func variableDefinition() {
-	var age int = 10
+	var age = 10
 	var name = "four"
 	height := 180.12
 	fmt.Println(age)
