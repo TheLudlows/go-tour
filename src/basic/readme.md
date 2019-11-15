@@ -88,5 +88,8 @@ type IFile interface {
 `var v1 interface{} = 1`
 
 #### 异常Error defer panic recover
-errror接口时内部定义的，使用只需要实现Error方法，具体看：[Error.go](src/basic/Error.go)
+error接口时内部定义的，使用只需要实现Error方法，具体看：[Error.go](src/basic/Error.go)
 defer类似于Java中的final语句块，即被defer申明的语句一定会被执行，并且可以声明多个方法，执行顺序为先进后出。
+panic是go内部的一个方法，类似于Java的throw关键字，正常的函数执行流程将立即终止，并将错误信息上报，defer声名的语句会被执行
+recover方法是接受panic的错误信息，类似于catch
+三者配合使用见[Error.go](src/basic/Error2.go)
