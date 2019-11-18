@@ -2,18 +2,14 @@ package main
 
 import "fmt"
 
-func Count(ch chan int) {
-	ch <- 1
-	fmt.Println("Counting")
-}
 func main() {
-	chs := make([]chan int, 10)
-	for i := 0; i < 10; i++ {
-		chs[i] = make(chan int)
-		go Count(chs[i])
-	}
-	for _, ch := range chs {
-		a := <-ch
-		fmt.Println("a", a)
-	}
+	ch := make(chan int, 1)
+	go func() {
+		ch <- 10
+		ch <- 20
+
+		fmt.Println("10 put")
+	}()
+	a := <-ch
+	fmt.Println("a", a)
 }
