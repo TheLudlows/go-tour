@@ -27,13 +27,15 @@
 常量中的数据类型只可以是布尔型、数字型（整数型、浮点型和复数）和字符串型。常量的定义格式：
 const identifier [type] = value
 
+#### 权限
+Go语言没有像其它语言一样有public、protected、private等访问控制修饰符，它是通过字母大小写来控制可见性的，如果定义的常量、变量、类型、接口、结构、函数等的名称是大写字母开头表示能被其它包访问或调用（相当于public），非大写开头就只能在包内使用（相当于private，变量或常量也可以下划线开头）
 #### 函数定义
 ```go
 func function_name( [parameter list] ) [return_types] {
    函数体
 }
 ```
-函数可以返回多个值
+函数可以返回多个值。
 另一种定义方式
 ```go
 addFunc := func(a int, b int) int {
@@ -41,7 +43,9 @@ addFunc := func(a int, b int) int {
 }
 println(addFunc(999 , 1))
 ```
-函数可以作为参数传递
+函数可以作为参数传递,
+参数列表可以改为（a,b int）
+
 #### 变量作用域
 - 函数内定义的变量称为局部变量
 - 函数外定义的变量称为全局变量
