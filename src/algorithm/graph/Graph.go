@@ -52,7 +52,6 @@ func (g *Graph) BFS(f func(node *Node)) {
 			break
 		}
 		node := q.Dequeue()
-		visited[node] = true
 		nexts := g.edges[*node]
 		// 将所有未访问过的邻接节点入队列
 		for _, next := range nexts {
@@ -66,5 +65,38 @@ func (g *Graph) BFS(f func(node *Node)) {
 		if f != nil {
 			f(node)
 		}
+	}
+}
+
+func (graph *Graph) DFS(f func(node *Node)) {
+	graph.lock.Lock()
+	defer graph.lock.Unlock()
+
+	stack := NewStack()
+	head := graph.nodes[0]
+	stack.push(*head)
+	visited := make(map[*Node]bool)
+	visited[head] = true
+	f(head)
+	for {
+		if stack.isEmpty() {
+			break
+		}
+		node := stack.pop()
+		visited[node] = true
+
+		around := graph.edges[*node]
+		for _, next := range around {
+			if !visited[next] {
+				stack.push(*node)
+				stack.push(*next)
+				visited[next] = true
+				if f != nil {
+					f(next)
+				}
+				break
+			}
+		}
+
 	}
 }

@@ -10,20 +10,30 @@ func TestBFS(t *testing.T) {
 	a := new(Node)
 	b := new(Node)
 	c := new(Node)
+	d := new(Node)
+	e := new(Node)
 
 	a.value = 1
 	b.value = 2
 	c.value = 3
-
+	d.value = 4
+	e.value = 5
 	g.AddNode(a)
 	g.AddNode(b)
 	g.AddNode(c)
+	g.AddNode(d)
+	g.AddNode(e)
 
 	g.AddEdge(a, b)
 	g.AddEdge(b, c)
 	g.AddEdge(c, a)
+	g.AddEdge(c, e)
+	g.AddEdge(a, d)
 
-	g.BFS(func(node *Node) {
+	/*g.BFS(func(node *Node) {
+		fmt.Printf("[Current Traverse Node]: %v\n", node)
+	})*/
+	g.DFS(func(node *Node) {
 		fmt.Printf("[Current Traverse Node]: %v\n", node)
 	})
 
@@ -65,4 +75,16 @@ func change1(v Value) Value {
 func change2(v *Value) *Value {
 	v.value = 300
 	return v
+}
+
+func TestStack(t *testing.T) {
+
+	stack := NewStack()
+	stack.push(Node{1})
+	stack.push(Node{2})
+	stack.push(Node{3})
+	fmt.Println(stack.pop())
+	fmt.Println(stack.pop())
+	fmt.Println(stack.pop())
+
 }
