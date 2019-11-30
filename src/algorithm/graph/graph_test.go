@@ -49,8 +49,12 @@ func TestPointer2(t *testing.T) {
 	fmt.Println(v)
 	v1 := change1(v)
 	fmt.Println(v1)
+	fmt.Println(v)
+
 	v2 := change2(&v)
 	fmt.Println(v2)
+	fmt.Println(v)
+
 }
 
 func change1(v Value) Value {
