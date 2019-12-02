@@ -5,8 +5,15 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 )
+
+type Message struct {
+	time int64
+	data string
+}
 
 type Reader interface {
 	read()
@@ -16,22 +23,22 @@ type Writer interface {
 	write()
 }
 type Processor interface {
-	process()
+	process(rc chan string, wc chan *Message)
 }
 type FileReader struct {
-	path string
+	path     string
+	readChan chan *string
 }
 
 type InfluxDBWriter struct {
-	dataChan chan []byte
+	dataChan chan *Message
 	server   string
 }
 
 type LogProcessor struct {
-	dataChan chan []byte
 }
 
-func (r *FileReader) read(readChan chan []byte) {
+func (r *FileReader) read() {
 	file, err := os.Open(r.path)
 	if err != nil {
 		panic(fmt.Sprintf("open file error:%s", err))
@@ -46,25 +53,47 @@ func (r *FileReader) read(readChan chan []byte) {
 		} else if err != nil {
 			panic(fmt.Sprintf("readFile error:%s", err))
 		}
-		fmt.Println(string(bytes))
-		readChan <- bytes
+		str := string(bytes)
+		fmt.Println("reader:", str)
+		r.readChan <- &str
 	}
 }
 
-func (w *InfluxDBWriter) write() {
+func (l *LogProcessor) process(rc chan *string, wc chan *Message) {
+	for str := range rc {
+		strArr := strings.Split(*str, "@")
+		if len(strArr) != 2 {
+			continue
+		}
+		time, _ := strconv.ParseInt(strArr[0], 10, 64)
+		message := &Message{
+			time: time,
+			data: strArr[1],
+		}
+		wc <- message
+	}
 
 }
 
-func (l *LogProcessor) process() {
-
+func (w *InfluxDBWriter) write() {
+	for message := range w.dataChan {
+		fmt.Println("writer:", *message)
+	}
 }
 
 func main() {
 
-	readChan := make(chan []byte)
-	reader := FileReader{path: "/Users/liuchao56/log"}
-	go reader.read(readChan)
-	<-readChan
+	readChan := make(chan *string)
+	writeChan := make(chan *Message)
+	reader := FileReader{path: "/Users/liuchao56/log", readChan: readChan}
+	process := LogProcessor{}
 
+	writer := InfluxDBWriter{
+		dataChan: writeChan,
+		server:   "",
+	}
+	go reader.read()
+	go process.process(readChan, writeChan)
+	go writer.write()
 	time.Sleep(500 * time.Second)
 }
