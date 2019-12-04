@@ -3,7 +3,10 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"influxdb/influx"
 	"io"
+	"log"
+	"math/rand"
 	"os"
 	"strconv"
 	"strings"
@@ -11,8 +14,9 @@ import (
 )
 
 type Message struct {
-	time int64
-	data string
+	t     int64
+	data  string
+	value string
 }
 
 type Reader interface {
@@ -31,6 +35,7 @@ type FileReader struct {
 }
 
 type InfluxDBWriter struct {
+	client   *influx.InfluxDB
 	dataChan chan *Message
 	server   string
 }
@@ -54,7 +59,7 @@ func (r *FileReader) read() {
 			panic(fmt.Sprintf("readFile error:%s", err))
 		}
 		str := string(bytes)
-		fmt.Println("reader:", str)
+		log.Println("reader:", str)
 		r.readChan <- &str
 	}
 }
@@ -62,13 +67,14 @@ func (r *FileReader) read() {
 func (l *LogProcessor) process(rc chan *string, wc chan *Message) {
 	for str := range rc {
 		strArr := strings.Split(*str, "@")
-		if len(strArr) != 2 {
+		if len(strArr) != 3 {
 			continue
 		}
 		time, _ := strconv.ParseInt(strArr[0], 10, 64)
 		message := &Message{
-			time: time,
-			data: strArr[1],
+			t:     time,
+			data:  strArr[1],
+			value: strArr[2],
 		}
 		wc <- message
 	}
@@ -76,8 +82,13 @@ func (l *LogProcessor) process(rc chan *string, wc chan *Message) {
 }
 
 func (w *InfluxDBWriter) write() {
+	tags := map[string]string{}
+	field := map[string]interface{}{}
 	for message := range w.dataChan {
-		fmt.Println("writer:", *message)
+		tags["value"] = message.value
+		field["data"] = message.data
+		field["t"] = message.t
+		w.client.Insert(&tags, &field)
 	}
 }
 
@@ -91,9 +102,43 @@ func main() {
 	writer := InfluxDBWriter{
 		dataChan: writeChan,
 		server:   "",
+		client:   initDBClient(),
 	}
+	go mock_data()
 	go reader.read()
 	go process.process(readChan, writeChan)
 	go writer.write()
 	time.Sleep(500 * time.Second)
+}
+
+func initDBClient() *influx.InfluxDB {
+	dbClient := influx.InfluxDB{
+		Url:       "http://127.0.0.1:8086",
+		Name:      "admin",
+		Pwd:       "",
+		Db:        "logprocess",
+		Mmt:       "log",
+		Precision: "ms",
+	}
+	dbClient.Build()
+	return &dbClient
+}
+
+func mock_data() {
+
+	file, err := os.OpenFile("/Users/liuchao56/log", os.O_APPEND|os.O_WRONLY, os.ModeAppend)
+	if err != nil {
+		panic(fmt.Sprintf("open file error:%s", err))
+	}
+	file.Seek(0, 2)
+	rand.Seed(6)
+	for {
+		n, err := file.WriteString(fmt.Sprint(time.Now().Unix(), "@", rand.Int(), "@", rand.Int()))
+		if err != nil {
+			log.Print("write data error ", err)
+			return
+		}
+		log.Print("write data total ", n)
+		time.Sleep(500 * time.Millisecond)
+	}
 }
