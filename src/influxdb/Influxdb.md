@@ -5,4 +5,4 @@
     `mkdir -p /Users/liuchao56/influxdb/data /Users/liuchao56/influxdb/conf /Users/liuchao56/influxdb/meta /Users/liuchao56/influxdb/wal`
     
 
-docker exec -it my_influxdb bash
+docker exec -it myinfluxdb bash

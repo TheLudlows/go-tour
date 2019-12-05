@@ -6,7 +6,9 @@ import (
 )
 
 func TestBFS(t *testing.T) {
-	g := new(Graph)
+	g := Graph{
+		max: 5,
+	}
 	a := new(Node)
 	b := new(Node)
 	c := new(Node)
@@ -24,11 +26,11 @@ func TestBFS(t *testing.T) {
 	g.AddNode(d)
 	g.AddNode(e)
 
-	g.AddEdge(a, b)
-	g.AddEdge(b, c)
-	g.AddEdge(c, a)
-	g.AddEdge(c, e)
-	g.AddEdge(a, d)
+	g.AddEdge(a, b, 10)
+	g.AddEdge(b, c, 20)
+	g.AddEdge(c, a, 5)
+	g.AddEdge(c, e, 2)
+	g.AddEdge(a, d, 2)
 
 	/*g.BFS(func(node *Node) {
 		fmt.Printf("[Current Traverse Node]: %v\n", node)

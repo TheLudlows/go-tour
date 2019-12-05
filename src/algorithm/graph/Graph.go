@@ -1,6 +1,7 @@
 package graph
 
 import (
+	"fmt"
 	"sync"
 )
 
@@ -9,25 +10,41 @@ type Node struct {
 }
 
 type Graph struct {
-	nodes []*Node          // 节点集
-	edges map[Node][]*Node // 邻接表表示的无向图
-	lock  sync.RWMutex     // 保证线程安全
+	nodes  []*Node          // 节点集
+	edges  map[Node][]*Node // 邻接表表示的无向图
+	lock   sync.RWMutex     // 保证线程安全
+	matrix [][]int          // 邻接矩阵表示带权重无向图
+	max    int              // 最大结点个数
 }
 
 // 增加节点
 func (g *Graph) AddNode(n *Node) {
 	g.lock.Lock()
 	defer g.lock.Unlock()
+	if len(g.nodes) >= g.max {
+		panic(fmt.Sprint("more than max node ", g.max))
+	}
 	g.nodes = append(g.nodes, n)
 }
 
 // 增加边
-func (g *Graph) AddEdge(from, to *Node) {
+func (g *Graph) AddEdge(from, to *Node, weight ...int) {
 	g.lock.Lock()
 	defer g.lock.Unlock()
 	// 首次建立图
 	if g.edges == nil {
 		g.edges = make(map[Node][]*Node)
+		g.matrix = make([][]int, g.max)
+		for i := 0; i < len(g.matrix); i++ {
+			g.matrix[i] = make([]int, g.max)
+		}
+	}
+	if len(weight) == 1 {
+		x, y := IndexOf(g.nodes, from, to)
+		if x < 0 || y < 0 {
+			panic(fmt.Sprint("edg error from:{},to:{}", x, y))
+		}
+		g.matrix[x][y] = weight[0]
 	}
 	g.edges[*from] = append(g.edges[*from], to)
 	g.edges[*to] = append(g.edges[*to], from)
@@ -99,4 +116,19 @@ func (graph *Graph) DFS(f func(node *Node)) {
 		}
 
 	}
+}
+
+//find index of node in Node arr,if not exist return -1
+func IndexOf(nodes []*Node, from, to *Node) (f, t int) {
+
+	f = -1
+	t = -1
+	for index, node := range nodes {
+		if node == from {
+			f = index
+		} else if node == to {
+			t = index
+		}
+	}
+	return f, t
 }
