@@ -1,4 +1,7 @@
-#### 1. 安装及配置
+[toc]
+
+#### 1. 安装及启动
+
 ```shell    
 docker pull influxdbdocker run -d -p 8086:8086 --name myinfluxdb influxdb
 docker exec -it [myinfluxdb] bash
@@ -15,13 +18,16 @@ docker exec -it [myinfluxdb] bash
 
 Point由时间戳（time）、数据（field）、标签（tags）组成。Point相当于传统数据库里的一行数据，如下表所示：
 
-| Point属性 |                                                  |
-| --------- | ------------------------------------------------ |
-| time      | 每个数据记录时间，是数据库中的主索引(会自动生成) |
-| fields    | 各种记录值，没有索引的属性                       |
-| tags      | 各种有索引的属性                                 |
+| Point属性 |                                                              |
+| --------- | ------------------------------------------------------------ |
+| time      | 每个数据记录时间，是数据库中的主索引(会自动生成)             |
+| fields    | 各种记录值，没有索引的属性，值可以为64位整型，64位浮点型，字符串以及布尔型 |
+| tags      | 各种有索引的属性，值只能为字符串                             |
+
+
 
 #### 3. InfluxDB操作
+
    - 客户端命令行方式
    - HTTP API方式
    - 各种语言库
@@ -29,18 +35,21 @@ Point由时间戳（time）、数据（field）、标签（tags）组成。Point
 客户端方式
 
  ```sql
-// DB相关
-show databases // 查看库
-create database MyDB // 创建数据库
-drop database MyDB // 删除数据库
-use MyDB //使用数据库
+influx -- 进入client
+show databases -- 查看库
+create database MyDB -- 创建数据库
+drop database MyDB -- 删除数据库
+use MyDB --使用数据库
  ```
 
 Measurement 类似于table，但不需要提前创建结构，第一次Insert操作会自动创建，在插入新数据时，tag、field和timestamp之间用空格分隔，
 
 ```sql
-show measurements	// 查看表
-insert log,rt=3,method="get" path="/login"
+show measurements	-- 查看表
+insert log,rt=3,method="get" path="/login" -- rt、method为tag，path为faild
+show tag keys from log -- 查看log表的tag key
+show tag values from log with key="method" [where 筛选field条件]-- 查看log表中tag为method的values
+show field keys from log -- 查看log表的field key
 ```
 
 InfluxDB没有提供修改和删除数据的方法,删除可以通过InfluxDB的数据保存策略来实现。
@@ -51,7 +60,7 @@ InfluxDB没有提供修改和删除数据的方法,删除可以通过InfluxDB的
 InfluxDB会比较服务器本地的时间戳和请求数据里的时间戳，并删除比在RPS里面用`DURATION`设置的更老的数据。一个数据库中可以有多个RPS。
 
 ```sql
-show retention policies on [DB name] // 查看库的保存策略
+show retention policies on [DB name] -- 查看库的保存策略
  
 name      duration shardGroupDuration replicaN default
 ----      -------- ------------------ -------- -------
@@ -84,6 +93,18 @@ alter retention policy "my_policy" on logprocess duration 4h
 drop retention policy "my_policy" on "logprocess"
 ```
 
+写入数据是可以指定使用的RP，若不指定则使用默认的。指定方式为如下,注意和普通的多了`into`关键字
+
+```sql
+insert into my_ploicy log,rt=3,method="get" path="/login"
+```
+
+查询也可以指定RP，若不指定使用默认的
+
+```sql
+select * from my_ploicy.log
+```
+
 #### 5. 连续查询(Continuous Query)
 
 如果我们不想完全将这些数据删除掉，就需要连续查询（Continuous Queries）的帮助了。连续查询主要用在将数据归档，以降低系统空间的占用率，主要是以降低精度为代价。
@@ -100,7 +121,7 @@ begin
 end
 ```
 
-上面创建了一个`my_cq`de CQ，作用于logprocess库的log表，每过30分钟对rt字段求平均值，然后插入avg_rt表中，使用my_rp保留策略。
+上面创建了一个`my_cq`的 CQ，作用于logprocess库的log表，每过30分钟对rt字段求平均值，然后插入avg_rt表中，使用my_rp保留策略。
 
 查看/删除
 
@@ -109,9 +130,21 @@ show Continuous Queries
 drop Continuous Query [cq_name] on [database_name]
 ```
 
+#### 补充概念
 
+- Filed key，以`insert into my_ploicy log,rt=3,method="get" path="/login"为例，Filed key为path，z
+- Filed value为/login
+- Tag keys为rt和method
+- Tag values为3和“get”，这里3存储将会转化为字符串类型
+- Field Set为path="/login",注意value相同为同一个Field Set
+- Tag Set为rt=3,method="get"，value相同为同一个Tag Set
+- Series是一些具有相同RP、Measurement和Tag Set的的Points集合
+- Series key 标识一个Series，由Measurement和Tag set组成
+- Point表示一行记录，Series和time决定一个Points，比如插入多次相同的RP、time和tag value的记录，但是只会产生一条记录。
 
-#### 6. 聚合函数
+#### 附1. 函数
+
+##### 聚合函数
 
 - count
 
@@ -156,9 +189,11 @@ drop Continuous Query [cq_name] on [database_name]
 
   返回一个字段中的所有值的和。字段的类型必须是长整型或float64。
 
-#### 7. 选择函数
+##### 选择函数、变换函数
 
 比如Top函数返回一个字段中最大的N个值，字段类型必须是长整型或float64类型。还有Bottom、First、Last、Max、Min等，使用都比较简单。
 
-#### 8. 变换函数
+#### 附2. Go Client的使用
+
+参考Demo : https://github.com/TheLudlows/go-tour/blob/master/src/influxdb/influx/InfluxDB.go
 

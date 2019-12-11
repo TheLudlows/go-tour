@@ -20,7 +20,7 @@ type InfluxDB struct {
 	Db        string
 	Mmt       string
 	Client    client.Client
-	Precision string
+	Precision string // 时间精度 s、ms、ns
 }
 
 func main() {
@@ -45,6 +45,7 @@ func main() {
 	fmt.Println(res[0])
 }
 
+// build influx DB client
 func (influx *InfluxDB) Build() {
 	cli, err := client.NewHTTPClient(client.HTTPConfig{
 		Addr:     influx.Url,
