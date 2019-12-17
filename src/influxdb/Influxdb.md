@@ -57,14 +57,18 @@ InfluxDB没有提供修改和删除数据的方法,删除可以通过InfluxDB的
 #### 4. 保留策略(Retention Policies)
  InfluxDB本身不提供数据的删除操作，因此用来控制数据量的方式就是定义数据保留策略。定义数据保留策略的目的是让InfluxDB能够知道可以丢弃哪些数据，从而更高效的处理数据。
 
-InfluxDB会比较服务器本地的时间戳和请求数据里的时间戳，并删除比在RPS里面用`DURATION`设置的更老的数据。一个数据库中可以有多个RPS。
+InfluxDB会比较服务器本地的时间戳和请求数据里的时间戳，并删除比在RPS里面用`DURATION`设置的更老的数据。一个数据库中可以有多个RP。
 
 ```sql
 show retention policies on [DB name] -- 查看库的保存策略
- 
 name      duration shardGroupDuration replicaN default
 ----      -------- ------------------ -------- -------
 autogen   0s       168h0m0s           1        false
+
+--新增/删除/修改
+create retention policy "my_policy" on "logprocess" duration 2h replication 1 [shard duration 1h] default
+alter retention policy "my_policy" on logprocess duration 4h
+drop retention policy "my_policy" on "logprocess"
 ```
 
 默认的策略如上所示，
@@ -73,7 +77,7 @@ autogen   0s       168h0m0s           1        false
 
 - duration：持续时间，0代表无限制
 
-- shardGroupDuration: 简单的说InfluxDB为了有利于查询删除等操作，持久化是以时间来划分数据，比如一个小时的数据存为一个分片，shardGroupDuration指的是一个分片组覆盖特定的时间间隔， InfluxDB通过查看相关保留策略的持续时间来确定该时间间隔。 下表概述了RP的DURATION和分片组的时间间隔之间的默认关系：
+- shardGroupDuration: 简单的说InfluxDB为了有利于查询删除等操作，持久化是以时间来划分数据，比如一个小时的数据存为一个分片，shardGroupDuration指的是一个分片组覆盖特定的时间间隔，如果没有指定 shard duration <duration>，InfluxDB通过查看相关保留策略的持续时间来确定该时间间隔。 下表概述了RP的DURATION和分片组的时间间隔之间的默认关系：
 
   | RP duration               | Shard group interval |
   | ------------------------- | -------------------- |
@@ -85,19 +89,12 @@ autogen   0s       168h0m0s           1        false
 
 - default：是否是默认策略
 
-新增/删除/修改
-
-```sql
-create retention policy "my_policy" on "logprocess" duration 2h replication 1 default
-alter retention policy "my_policy" on logprocess duration 4h
-drop retention policy "my_policy" on "logprocess"
-```
 
 写入数据是可以指定使用的RP，若不指定则使用默认的。指定方式为如下,注意和普通的多了`into`关键字
-
-```sql
+````sql
 insert into my_ploicy log,rt=3,method="get" path="/login"
 ```
+
 
 查询也可以指定RP，若不指定使用默认的
 
@@ -132,7 +129,7 @@ drop Continuous Query [cq_name] on [database_name]
 
 #### 补充概念
 
-- Filed key，以`insert into my_ploicy log,rt=3,method="get" path="/login"为例，Filed key为path，z
+- Filed key，以`insert into my_ploicy log,rt=3,method="get" path="/login"为例，Filed key为path
 - Filed value为/login
 - Tag keys为rt和method
 - Tag values为3和“get”，这里3存储将会转化为字符串类型
