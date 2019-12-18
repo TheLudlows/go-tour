@@ -1,6 +1,6 @@
 [toc]
 
-#### 1. 安装及启动
+#### 1. 快速使用
 
 ```shell    
 docker pull influxdbdocker run -d -p 8086:8086 --name myinfluxdb influxdb
@@ -127,7 +127,7 @@ show Continuous Queries
 drop Continuous Query [cq_name] on [database_name]
 ```
 
-#### 补充概念
+#### 6. 补充概念
 
 - Filed key，以`insert into my_ploicy log,rt=3,method="get" path="/login"为例，Filed key为path
 - Filed value为/login
@@ -138,6 +138,10 @@ drop Continuous Query [cq_name] on [database_name]
 - Series是一些具有相同RP、Measurement和Tag Set的的Points集合
 - Series key 标识一个Series，由Measurement和Tag set组成
 - Point表示一行记录，Series和time决定一个Points，比如插入多次相同的RP、time和tag value的记录，但是只会产生一条记录。
+
+#### 7. ShardGroup & Shard & Sharding
+
+ShardGroup是用来做InfluxDB中时间分区，一个ShardGroup覆盖了一段时间，该时间段内的数据只会在对应的ShardGroup中。不同的ShardGroup不会重叠。ShardGroup是一个逻辑容器，它内部组织的Shard才是真正的存储引擎。Shard的实现是TSM(Time Sort Merge Tree) 引擎，TSM负责数据的编码存储、读写服务等。ShardGroup内部可能包含多个Shard，首先数据根据时间选择落在哪个ShardGroup，然后根据Series进行Hash再进行一次分区，决定进入哪个Shard。第一层Rang Sharding，第二层Hash Sharding。双层Sharding设计主要是为了解决热点写入问题。单机版的的Shard个数固定为1，而集群版的Shard个数取决于副本数和节点数。
 
 #### 附1. 函数
 
