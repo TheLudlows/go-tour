@@ -11,8 +11,13 @@ LSM Tree (Log-Structured Merge Tree) 即日志合并树，被用于大量的数�
 #### InfluxDB 存储架构
 
 InfluxDB在经历了LSM Tree、B+Tree等集中尝试后，最终自研TSM，TTSM全称是Time-Structured Merge Tree，思想类似LSM。我们先看它的整体架构：
-![1](C:\Users\four\GolandProjects\go-tour\src\influxdb\1.png)
+![1](./1.png)
 1. Shard
 上一篇文章中提到过这个概念，InfluxDB 中按照数据的时间戳所在的范围，会去创建不同的Shard Group，而Shard Group中会包含一个至多个Shard，
 单机版本中只有一个Shard。每一个 shard 都有自己的 cache、wal、tsm file 以及 compactor。
 2. Cache
+内存中暂存数据的地方，实现就是一个map，key 为 seriesKey + filedName，value为entry,具体实现为List<values>,values根据时间来排序。插入数据时，同时往 cache 与 wal 中写入数据，当Cache中的数据达到25M(默认)全部写入 tsm 文件。
+3. WAL
+wal 文件的内容与内存中的 cache 相同，其作用就是为了防止系统崩溃导致的数据丢失。由于数据是追加写入文件中，所以写入效率非常高。
+4. TSI
+5. Compactor
