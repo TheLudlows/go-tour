@@ -96,7 +96,8 @@ func main() {
 
 	readChan := make(chan *string)
 	writeChan := make(chan *Message)
-	reader := FileReader{path: "/Users/liuchao56/log", readChan: readChan}
+	path := "D:/log.txt"
+	reader := FileReader{path: path, readChan: readChan}
 	process := LogProcessor{}
 
 	writer := InfluxDBWriter{
@@ -104,7 +105,7 @@ func main() {
 		server:   "",
 		client:   initDBClient(),
 	}
-	go mock_data()
+	go mock_data(path)
 	go reader.read()
 	go process.process(readChan, writeChan)
 	go writer.write()
@@ -116,17 +117,17 @@ func initDBClient() *influx.InfluxDB {
 		Url:       "http://127.0.0.1:8086",
 		Name:      "admin",
 		Pwd:       "",
-		Db:        "logprocess",
-		Mmt:       "log",
+		Db:        "log",
+		Mmt:       "myTable",
 		Precision: "ms",
 	}
 	dbClient.Build()
 	return &dbClient
 }
 
-func mock_data() {
+func mock_data(path string) {
 
-	file, err := os.OpenFile("/Users/liuchao56/log", os.O_APPEND|os.O_WRONLY, os.ModeAppend)
+	file, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
 	if err != nil {
 		panic(fmt.Sprintf("open file error:%s", err))
 	}
