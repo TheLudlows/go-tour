@@ -17,10 +17,11 @@ InfluxDB在经历了LSM Tree、B+Tree等集中尝试后，最终自研TSM，TTSM
 
 1. Shard
 上一篇文章中提到过这个概念，InfluxDB 中按照数据的时间戳所在的范围，会去创建不同的Shard Group，而Shard Group中会包含一个至多个Shard，单机版本中只有一个Shard。每一个 shard 都有自己的 cache、wal、tsm files 以及 compactor。
-2. Cache
-  内存中暂存数据的地方，其实是一个map，key 为 seriesKey + FiledName，value为entry,具体实现为List<fieldkey,values>,values根据时间来排序。插入数据时，同时往 cache 与 wal 中写入数据，当Cache中的数据达到25M(默认)全部写入 tsm 文件。
-3. WAL
-  wal 文件的内容与内存中的 cache 相同，其作用就是为了防止系统崩溃导致的数据丢失。由于数据是顺序写入文件中，所以写入效率非常高。
+2.WAL
+  wal 文件其作用就是为了防止系统崩溃导致的数据丢失。WAL是一种写优化的存储格式，允许持久写入，但不易于查询
+3.  Cache
+Cache是WAL中存储的数据的内存表示形式。达到一定阈值时与存储在TSM文件中的数据合并。
+    ~~内存中暂存数据的地方，其实是一个map，key 为 seriesKey + FiledName，value为entry,具体实现为List<fieldkey,values>,values根据时间来排序。插入数据时，同时往 cache 与 wal 中写入数据，当Cache中的数据达到25M(默认)全部写入 tsm 文件。~~
 4. TSM
 5. Compactor
 
@@ -47,9 +48,49 @@ influxdb/
 ```
 
 #### WAL
-
+新的Ponit到来时，首先将被序列化，使用Snappy压缩并通过`fsync`写入WAL文件，然后在加入到内存中。一个WAL文件被称为一个 segment。写入文件的格式基于TLV(Type-length-value)标准。其中一个字节代表条目的类型（写或删除），一个4字节uint32代表压缩块的长度，然后是压缩块。文件大小达到10M，则关闭才文件并开一个文件。当Cache中的数据写入TSM文件中后会删除对应的WAL文件。
 #### TSM File 
+Cache中的数据会不间断的写入TMS file，一个TSM文件由四个部分组成：head，block，index和Footer。
+```
++--------+------------------------------------+-------------+--------------+
+| Header |               Blocks               |    Index    |    Footer    |
+|5 bytes |              N bytes               |   N bytes   |   4 bytes    |
++--------+------------------------------------+-------------+--------------+
+```
+Head用于标识文件类型和版本号。
+```
++-------------------+
+|      Header       |
++-------------------+
+|  Magic  │ Version |
+| 4 bytes │ 1 byte  |
++-------------------+
+```
+- Magic: 用于区分是哪一个存储引擎，目前使用的 tsm1 引擎，MagicNumber 为 0x16D116D1。
+- Version (1 byte): 目前是 tsm1 引擎，此值固定为 1
 
+
+Blocks 内部是一些连续的 Block，block 是 InfluxDB 中的最小读取对象，每次读取操作都会读取一个 block。每一个 Block 分为 CRC32 值和 Data 两部分，CRC32 值用于校验 Data 的内容是否有问题。Data 的长度记录在之后的 Index 部分中。
+```
++--------------------------------------------------------------------+
+│                           Blocks                                   │
++---------------------+-----------------------+----------------------+
+|       Block 1       |        Block 2        |       Block N        |
++---------------------+-----------------------+----------------------+
+|   CRC    |  Data    |    CRC    |   Data    |   CRC    |   Data    |
+| 4 bytes  | N bytes  |  4 bytes  | N bytes   | 4 bytes  |  N bytes  |
++---------------------+-----------------------+----------------------+
+```
+
+Index是对Blocks的索引，
+```
++-----------------------------------------------------------------------------+
+│                                   Index                                     │
++-----------------------------------------------------------------------------+
+│ Key Len │   Key   │ Type │ Count │Min Time │Max Time │ Offset │  Size  │...│
+│ 2 bytes │ N bytes │1 byte│2 bytes│ 8 bytes │ 8 bytes │8 bytes │4 bytes │   │
++-----------------------------------------------------------------------------+
+```
 #### 
 
 #### 

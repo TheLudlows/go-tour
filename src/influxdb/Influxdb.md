@@ -91,7 +91,7 @@ drop retention policy "my_policy" on "logprocess"
 
 
 写入数据是可以指定使用的RP，若不指定则使用默认的。指定方式为如下,注意和普通的多了`into`关键字
-````sql
+``sql
 insert into my_ploicy log,rt=3,method="get" path="/login"
 ```
 
@@ -139,6 +139,24 @@ drop Continuous Query [cq_name] on [database_name]
 - Series key 标识一个Series，由Measurement和Tag set组成
 - Point表示一行记录，Series和time决定一个Points，比如插入多次相同的RP、time和tag value的记录，但是只会产生一条记录。
 
+举例说明,以下是对服务器监控的数据，其中tag为location和host，field为CUP、Mem，measurement为Monitoring。
+```
+location=SH,host=server1 CUP=73,Mem=16.067 1574179200s
+location=SH,host=server1 CUP=74,Mem=15.123 1574179210s
+location=SH,host=server1 CUP=71,Mem=15.450 1574179220s
+location=SH,host=server2 CUP=31,Mem=32.087 1574179200s
+location=SH,host=server2 CUP=20,Mem=32.167 1574179210s
+location=SH,host=server2 CUP=25,Mem=32.257 1574179220s
+location=SZ,host=server3 CUP=11,Mem=8.021 1574179200s
+location=SZ,host=server3 CUP=17,Mem=7.530 1574179210s
+location=SZ,host=server4 CUP=37,Mem=7.214 1574179220s
+location=SZ,host=server4 CUP=43,Mem=16.779 1574179200s
+```
+- Tag set：以第一行数据为例，location和host就是tag key，SH和server1就是对应的tag value。组合在一起location=SH,host=server1就是tag set
+- Field set：第一行数据中的CUP=73,Mem=16.067
+- point：每一行都是一个数据点
+- Series：给定一组tag set，可以找多个Points。比如location=SH,host=server1这个tag set对应前三行，称为一个Series。对应的Series key为Monitoring + tag set。
+- Entry: field对应的一列数据以及相对的timestamp就组成一个entry,其中key为Series key + Field key[name]，比如Monitoring + location=SH,host=server1 + CUP对应的entry是[1574179200s|73, 1574179210s|74, 1574179220s|71]
 #### 7. ShardGroup & Shard & Sharding
 
 ShardGroup是用来做InfluxDB中时间分区，一个ShardGroup覆盖了一段时间，该时间段内的数据只会在对应的ShardGroup中。不同的ShardGroup不会重叠。ShardGroup是一个逻辑容器，它内部组织的Shard才是真正的存储引擎。Shard的实现是TSM(Time Sort Merge Tree) 引擎，TSM负责数据的编码存储、读写服务等。ShardGroup内部可能包含多个Shard，首先数据根据时间选择落在哪个ShardGroup，然后根据Series进行Hash再进行一次分区，决定进入哪个Shard。第一层Rang Sharding，第二层Hash Sharding。双层Sharding设计主要是为了解决热点写入问题。单机版的的Shard个数固定为1，而集群版的Shard个数取决于副本数和节点数。
