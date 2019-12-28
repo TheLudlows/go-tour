@@ -98,7 +98,7 @@ insert into my_ploicy log,rt=3,method="get" path="/login"
 
 查询也可以指定RP，若不指定使用默认的
 
-```sql
+​```sql
 select * from my_ploicy.log
 ```
 
@@ -135,11 +135,11 @@ drop Continuous Query [cq_name] on [database_name]
 - Tag values为3和“get”，这里3存储将会转化为字符串类型
 - Field Set为path="/login",注意value相同为同一个Field Set
 - Tag Set为rt=3,method="get"，value相同为同一个Tag Set
-- Series是一些具有相同RP、Measurement和Tag Set的的Points集合
+- Series是一些具有相同RP、Measurement和Tag Set的数据集合
 - Series key 标识一个Series，由Measurement和Tag set组成
 - Point表示一行记录，Series和time决定一个Points，比如插入多次相同的RP、time和tag value的记录，但是只会产生一条记录。
 
-举例说明,以下是对服务器监控的数据，其中tag为location和host，field为CUP、Mem，measurement为Monitoring。
+举例说明，以下是对服务器监控的数据，其中tag为location和host，field为CUP、Mem，measurement为Monitoring。
 ```
 location=SH,host=server1 CUP=73,Mem=16.067 1574179200s
 location=SH,host=server1 CUP=74,Mem=15.123 1574179210s
@@ -155,7 +155,7 @@ location=SZ,host=server4 CUP=43,Mem=16.779 1574179200s
 - Tag set：以第一行数据为例，location和host就是tag key，SH和server1就是对应的tag value。组合在一起location=SH,host=server1就是tag set
 - Field set：第一行数据中的CUP=73,Mem=16.067
 - point：每一行都是一个数据点
-- Series：给定一组tag set，可以找多个Points。比如location=SH,host=server1这个tag set对应前三行，称为一个Series。对应的Series key为Monitoring + tag set。
+- Series：给定一组tag set，比如location=SH,host=server1这个tag set对应前三行。对应的Series key为Monitoring + tag set。
 - Entry: field对应的一列数据以及相对的timestamp就组成一个entry,其中key为Series key + Field key[name]，比如Monitoring + location=SH,host=server1 + CUP对应的entry是[1574179200s|73, 1574179210s|74, 1574179220s|71]
 #### 7. ShardGroup & Shard & Sharding
 

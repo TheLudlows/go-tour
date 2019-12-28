@@ -12,18 +12,18 @@ LSM Tree (Log-Structured Merge Tree) 即日志合并树，被用于大量的数�
 
 #### InfluxDB 存储架构
 
-InfluxDB在经历了LSM Tree、B+Tree等集中尝试后，最终自研TSM，TTSM全称是Time-Structured Merge Tree，思想类似LSM。我们先看它的整体架构：
+InfluxDB在经历了LSM Tree、B+Tree等几种尝试后，最终自研TSM，TSM全称是Time-Structured Merge Tree，思想类似LSM。我们先看它的整体架构：
 ![1](./1.png)
-
+##### 名次解释
 1. Shard
 上一篇文章中提到过这个概念，InfluxDB 中按照数据的时间戳所在的范围，会去创建不同的Shard Group，而Shard Group中会包含一个至多个Shard，单机版本中只有一个Shard。每一个 shard 都有自己的 cache、wal、tsm files 以及 compactor。
 2.WAL
   wal 文件其作用就是为了防止系统崩溃导致的数据丢失。WAL是一种写优化的存储格式，允许持久写入，但不易于查询
-3.  Cache
-Cache是WAL中存储的数据的内存表示形式。达到一定阈值时与存储在TSM文件中的数据合并。
+2. Cache
+  Cache是WAL中存储的数据的内存表示形式。达到一定阈值时与存储在TSM文件中的数据合并。
     ~~内存中暂存数据的地方，其实是一个map，key 为 seriesKey + FiledName，value为entry,具体实现为List<fieldkey,values>,values根据时间来排序。插入数据时，同时往 cache 与 wal 中写入数据，当Cache中的数据达到25M(默认)全部写入 tsm 文件。~~
-4. TSM
-5. Compactor
+3. TSM
+4. Compactor
 
 #### 文件目录介绍
 
@@ -34,21 +34,27 @@ influxdb/
   ├── data/
   |    └── [DB Name]/
   |        └── autogen/
-  |            └── 33/ #shard group id
-  |                ├── 000000001-0000000001.tsm
-  |                └── fields.idx
+  |        |    └── [shard group id]/
+  |        |        ├── 000000001-0000000001.tsm
+  |        |        └── fields.idx
+  |				 |			  └── index/
+  |				 |							└── 0/
+  |				 |							|		└── L 
+ |				 |							|		└── MANIFEST
+  |				 |					    └── .../
+  |				 |						  └── 7/
   |.   		 └── _series
   ├── meta/
   |    └── meta.db
   └── wal/
       └── [DB Name]/
-          └── autogen/ #retention policy
-              └── 33/ # shard group id
+          └── [retention policy]/ 
+              └── [shard group id]/ 
                   └── _00001.wal
 ```
 
 #### WAL
-新的Ponit到来时，首先将被序列化，使用Snappy压缩并通过`fsync`写入WAL文件，然后在加入到内存中。一个WAL文件被称为一个 segment。写入文件的格式基于TLV(Type-length-value)标准。其中一个字节代表条目的类型（写或删除），一个4字节uint32代表压缩块的长度，然后是压缩块。文件大小达到10M，则关闭才文件并开一个文件。当Cache中的数据写入TSM文件中后会删除对应的WAL文件。
+新的Ponit到来时，首先将被序列化，使用Snappy压缩并通过`fsync`写入WAL文件，然后在加入到内存中。一个WAL文件被称为一个 segment。写入文件的格式基于TLV(Type-length-value)标准。其中第一个字节代表条目的类型（写或删除），一个4字节uint32代表压缩块的长度，然后是压缩块。文件大小达到10M，则关闭才文件并开一个文件。当Cache中的数据写入TSM文件中后会删除对应的WAL文件。
 #### TSM File 
 Cache中的数据会不间断的写入TMS file，一个TSM文件由四个部分组成：head，block，index和Footer。
 ```
@@ -82,16 +88,58 @@ Blocks 内部是一些连续的 Block，block 是 InfluxDB 中的最小读取对
 +---------------------+-----------------------+----------------------+
 ```
 
-Index是对Blocks的索引，
+每个block内存储的是某个TimeSeries的一段时间范围内的值，即某个时间段下measurement+tag set+field的值，Block内部会根据field的不同的值的类型采取不同的压缩策略，以达到最优的压缩效率。Block具体格式如下
+
+```
++--------------------------------------------------------------------+
+│                           Block                                    │
++-------------+----------------+----------------+------------+-------+
+| 	  CRC		  | FieldValueType | TimeStamp Size | TimeStamps | values|
+|   4 bytes   |      1 bytes   |       -		    | 			-    |    -	 |
++-------------+----------------+----------------+------------+-----=-+
+```
+- FieldValueType: 表示该DataBlock存储的FieldValue类型，InfluxDB中存在5中FieldValueType: Float, Integer, Unsigned, Boolean, String
+- TimestampSize: 表示TimeStamps block的长度，使用可变长编码
+- Timestamps: 将时间按列使用delta-delta编码压缩
+- Values: 将FieldValue值按列进行压缩，不同类型的FieldValue使用不同的压缩算法
+
+
+check block ？
+
+Index是对Blocks的索引，首先按键顺序排列，然后按时间排序。key就是Series key + 分隔符 + Field name。每个Point有多个字段会在TSM文件中创建多个索引条目。
+
 ```
 +-----------------------------------------------------------------------------+
 │                                   Index                                     │
 +-----------------------------------------------------------------------------+
-│ Key Len │   Key   │ Type │ Count │Min Time │Max Time │ Offset │  Size  │...│
-│ 2 bytes │ N bytes │1 byte│2 bytes│ 8 bytes │ 8 bytes │8 bytes │4 bytes │   │
+│ Key Len │   Key   │ Type │ Count │Min Time │Max Time │ Offset │  Size  │....│
+│ 2 bytes │ N bytes │1 byte│2 bytes│ 8 bytes │ 8 bytes │8 bytes │4 bytes │    │
 +-----------------------------------------------------------------------------+
 ```
-#### 
 
-#### 
+- **Key Len **:  key 的长度。
+- **Key **: 这里的 key 指的是 Series Key + 分隔符 + fieldName。
+- **Type**: Field Name 所对应的 FieldValue 的类型，也就是 Block 中 Data 内的数据的类型。
+- **Count**: 后面 Blocks 索引的个数。
+- **Min Time** : block 中 最小时间戳。
+- **Max Time** : block 中最大时间戳。
+- **Offset **: block 在整个 TSM File 中的偏移量。
+- **Size **: block 的大小。根据 Offset + Size 字段就可以快速读取出一个 block 中的内容。
+
+Footer用于存储索引起点的偏移量，方便将索引信息加载到内存中。
+
+```
++---------+
+│ Footer  │
++---------+
+│Index Ofs│
+│ 8 bytes │
++---------+
+```
+
+
+
+
+
+//TODO  间接索引？
 
