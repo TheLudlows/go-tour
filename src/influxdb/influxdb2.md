@@ -27,12 +27,12 @@ InfluxDB在经历了LSM Tree、B+Tree等几种尝试后，最终自研TSM，TSM�
 
 #### 文件目录介绍
 
-Linux版本的数据文件位于`/var/lib/influxdb/`,Windows位于`/用户/.influxd/`下。主要有三个目录，分别是 meta, wal 以及 data 。meta 用于存储数据库的一些元数据，meta.db 文件。wal 目录存放预写日志文件，以 .wal 结尾。data 目录存放实际存储的数据文件，以 .tsm 结尾。整体结构如下所示：
+Linux版本的数据文件位于`/var/lib/influxdb/`,Windows位于`C:/用户/.influxd/`下。主要有三个目录，分别是 meta, wal 以及 data 。meta 用于存储数据库的一些元数据，meta.db 文件。wal 目录存放预写日志文件，以 .wal 结尾。data 目录存放实际存储的数据文件，以 .tsm 结尾。整体结构如下所示：
 
 ```tree
 influxdb/
   ├── data/
-  |    └── [DB Name]/
+  |    └── [retention policy]/
   |        └── autogen/
   |        |    └── [shard group id]/
   |        |        ├── 000000001-0000000001.tsm
