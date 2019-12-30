@@ -14,7 +14,7 @@ LSM Tree (Log-Structured Merge Tree) 即日志合并树，被用于大量的数�
 
 InfluxDB在经历了LSM Tree、B+Tree等几种尝试后，最终自研TSM，TSM全称是Time-Structured Merge Tree，思想类似LSM。我们先看它的整体架构：
 ![1](./1.png)
-##### 名次解释
+##### 名词解释
 1. Shard
 上一篇文章中提到过这个概念，InfluxDB 中按照数据的时间戳所在的范围，会去创建不同的Shard Group，而Shard Group中会包含一个至多个Shard，单机版本中只有一个Shard。每一个 shard 都有自己的 cache、wal、tsm files 以及 compactor。
 2.WAL
