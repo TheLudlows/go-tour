@@ -46,20 +46,20 @@ type LogProcessor struct {
 func (r *FileReader) read() {
 	file, err := os.Open(r.path)
 	if err != nil {
-		panic(fmt.Sprintf("open file error:%s", err))
+		file, _ = os.Create(r.path)
 	}
 	file.Seek(0, 2)
 	for {
 		bufReader := bufio.NewReader(file)
 		bytes, _, err := bufReader.ReadLine()
 		if err == io.EOF {
-			time.Sleep(500 * time.Millisecond)
+			time.Sleep(1 * time.Millisecond)
 			continue
 		} else if err != nil {
 			panic(fmt.Sprintf("readFile error:%s", err))
 		}
 		str := string(bytes)
-		log.Println("reader:", str)
+		//log.Println("reader:", str)
 		r.readChan <- &str
 	}
 }
@@ -87,29 +87,31 @@ func (w *InfluxDBWriter) write() {
 	for message := range w.dataChan {
 		tags["value"] = message.value
 		field["data"] = message.data
-		field["t"] = message.t
+		field["event"] = message.t
 		w.client.Insert(&tags, &field)
 	}
 }
 
 func main() {
+	mock_data1(initDBClient())
 
-	readChan := make(chan *string)
-	writeChan := make(chan *Message)
-	path := "D:/log.txt"
-	reader := FileReader{path: path, readChan: readChan}
-	process := LogProcessor{}
+	/*	readChan := make(chan *string)
+		writeChan := make(chan *Message)
+		path := "/tmp/log"
+		reader := FileReader{path: path, readChan: readChan}
+		process := LogProcessor{}
 
-	writer := InfluxDBWriter{
-		dataChan: writeChan,
-		server:   "",
-		client:   initDBClient(),
-	}
-	go mock_data(path)
-	go reader.read()
-	go process.process(readChan, writeChan)
-	go writer.write()
-	time.Sleep(500 * time.Second)
+		writer := InfluxDBWriter{
+			dataChan: writeChan,
+			server:   "",
+			client:   initDBClient(),
+		}
+		go mock_data(path)
+		go reader.read()
+		go process.process(readChan, writeChan)
+		go writer.write()
+		time.Sleep(5000 * time.Second)
+	*/
 }
 
 func initDBClient() *influx.InfluxDB {
@@ -117,7 +119,7 @@ func initDBClient() *influx.InfluxDB {
 		Url:       "http://127.0.0.1:8086",
 		Name:      "admin",
 		Pwd:       "",
-		Db:        "log",
+		Db:        "testdb7",
 		Mmt:       "myTable",
 		Precision: "ms",
 	}
@@ -134,12 +136,32 @@ func mock_data(path string) {
 	file.Seek(0, 2)
 	rand.Seed(6)
 	for {
-		n, err := file.WriteString(fmt.Sprint(time.Now().Unix(), "@", rand.Int(), "@", rand.Int()))
+		_, err := file.WriteString(fmt.Sprint(time.Now().Unix(), "@", rand.Int(), "@", rand.Int()))
 		if err != nil {
 			log.Print("write data error ", err)
 			return
 		}
-		log.Print("write data total ", n)
-		time.Sleep(500 * time.Millisecond)
+		//log.Print("write data total ", n)
+		time.Sleep(1 * time.Millisecond)
+	}
+}
+
+func mock_data1(client *influx.InfluxDB) {
+
+	rand.Seed(6)
+	i := 0
+	for {
+		i++
+		tags := map[string]string{}
+		field := map[string]interface{}{}
+		tags["value"] = fmt.Sprint(rand.Int())
+
+		field["data"] = fmt.Sprint(time.Now().Unix())
+		field["event"] = rand.Int()
+		client.Insert(&tags, &field)
+
+		if i%10000 == 0 {
+			fmt.Println("insert total ", i)
+		}
 	}
 }

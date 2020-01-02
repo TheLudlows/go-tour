@@ -20,6 +20,7 @@ type InfluxDB struct {
 	Db        string
 	Mmt       string
 	Client    client.Client
+	bps       client.BatchPoints
 	Precision string // 时间精度 s、ms、ns
 }
 
@@ -78,12 +79,11 @@ func (influx *InfluxDB) Query(cmd string) (res []client.Result, err error) {
 
 //Insert
 func (influx *InfluxDB) Insert(tags *map[string]string, fields *map[string]interface{}) {
-	bp, err := client.NewBatchPoints(client.BatchPointsConfig{
-		Database:  influx.Db,
-		Precision: influx.Precision,
-	})
-	if err != nil {
-		log.Fatal(err)
+	if influx.bps == nil {
+		influx.bps, _ = client.NewBatchPoints(client.BatchPointsConfig{
+			Database:  influx.Db,
+			Precision: influx.Precision,
+		})
 	}
 
 	pt, err := client.NewPoint(
@@ -95,9 +95,14 @@ func (influx *InfluxDB) Insert(tags *map[string]string, fields *map[string]inter
 	if err != nil {
 		log.Fatal(err)
 	}
-	bp.AddPoint(pt)
-
-	if err := influx.Client.Write(bp); err != nil {
-		log.Fatal(err)
+	influx.bps.AddPoint(pt)
+	if len(influx.bps.Points()) == 1000 {
+		if err := influx.Client.Write(influx.bps); err != nil {
+			log.Fatal(err)
+		}
+		influx.bps, _ = client.NewBatchPoints(client.BatchPointsConfig{
+			Database:  influx.Db,
+			Precision: influx.Precision,
+		})
 	}
 }
