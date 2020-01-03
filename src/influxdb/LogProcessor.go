@@ -119,8 +119,8 @@ func initDBClient() *influx.InfluxDB {
 		Url:       "http://127.0.0.1:8086",
 		Name:      "admin",
 		Pwd:       "",
-		Db:        "testdb7",
-		Mmt:       "myTable",
+		Db:        "testdb12",
+		Mmt:       "mytable",
 		Precision: "ms",
 	}
 	dbClient.Build()

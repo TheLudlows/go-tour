@@ -9,7 +9,9 @@ import (
 )
 
 func main() {
-	file, e := os.Open("/Users/liuchao56/testdb7/autogen/50/index/0/L0-00000001.tsl")
+	//file, e := os.Open("/Users/liuchao56/.influxdb/data/testdb12/autogen/4/index/0/L0-00000001.tsl")
+	file, e := os.Open("/Users/liuchao56/L0-00000002.tsl")
+
 	if e != nil {
 		log.Print(fmt.Sprint("open file", e))
 	}
@@ -29,8 +31,7 @@ func main() {
 	id, n := binary.Uvarint(line[length:])
 	fmt.Println(id, n)
 	length += n
-	fmt.Println(string(line[4:9]))
-	fmt.Println(string(line[10:18]))
+	fmt.Println(string(line[3:9]))
 
 	/*len := BytesToInt32(mBytes)
 	lenBytes := make([] byte,len)
@@ -52,8 +53,4 @@ func BytesToInt16(buf []byte) int16 {
 
 func BytesToInt32(buf []byte) int32 {
 	return int32(binary.BigEndian.Uint32(buf))
-}
-
-func BytesToInt64(buf []byte) int64 {
-	return int64(binary.BigEndian.Uint64(buf))
 }
