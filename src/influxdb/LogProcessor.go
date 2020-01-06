@@ -162,6 +162,7 @@ func mock_data1(client *influx.InfluxDB) {
 
 		if i%10000 == 0 {
 			fmt.Println("insert total ", i)
+			time.Sleep(1 * time.Second)
 		}
 	}
 }

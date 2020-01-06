@@ -105,14 +105,12 @@ Flag标记Series key是新加还是删除，SeriesId对应一个int64。Size表�
 ##### TSI
 
 当TSL文件大小达到配置的compaction阈值时（由配置文件中的max-index-log-file-size指定，默认为1M），TSL文件会compaction成TSI文件，TSI文件算是存储格式最为复杂的。
-```
-+-------------------------------------------------------+
-|                        TSI                            |
-+----------------+---------+----------------+-----------+
-|  Magic  │ Tag Sets | MeasureMent Block │ SeriesId set |
-|    2 bytes     │  N byte |    2 bytes     │   N byte  |
-+----------------+---------+----------------+-----------+
-```
+
+| Magic  | Tag Set Blocks | Measurement Block | SeriesID Set | TombstoneSeriesIDSet | SeriesSketch | TombstoneSketch | Trailer |
+| :----: | :------------: | :---------------: | :----------: | :------------------: | ------------ | --------------- | ------- |
+| 4 Byte |                |                   |              |                      |              |                 | 82 Byte |
+
+
 
 
 #### TSM File 
