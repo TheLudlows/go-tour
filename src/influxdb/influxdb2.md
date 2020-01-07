@@ -91,28 +91,11 @@ idOffsetMap map[SeriesID]int64 // ID到Series key 在Series segment file中的�
 
 Index文件有三部分组成，分别是Header，OffsetIDBolck、IDOffsetBlock。
 
+| Magic  | Version | MaxSeriesID | MaxOffset | SeriesIDcount | Capacity | OffsetIDBolckOffset | OffsetIDBolckSize | IDOffsetBlockOffset | IDOffsetBlockSize |OffsetIDBolck|IDOffsetBlock|
+| :----: | :-----: | :---------: | :-------: | :-----------: | :------: | :-----------------: | :---------------: | :-----------------: | :---------------: | :---------: |:---------: |
+| 4 byte | 1 byte  | 8 byte      | 8 byte    | 8 byte        | 8 byte   | 8 byte              | 8 byte            | 8 byte              | 8 byte            | Entrys(Offset ID) |Entrys(ID Offset)            |
 
-
-
-
-
-
-#### TSI 
-
-默认配置下索引信息存放于内存中，`index-version="tsi1"`配置作用是将索引信息持久化至硬盘，TSI索引主要包含tsl、tsi文件，其实Series 文件也算。tsl、tsi文件位于在每个shard中`index`目录下。
-
-##### TSL
-
-##### TSI
-
-当TSL文件大小达到配置的compaction阈值时（由配置文件中的max-index-log-file-size指定，默认为1M），TSL文件会compaction成TSI文件，TSI文件算是存储格式最为复杂的。
-
-| Magic  | Tag Set Blocks | Measurement Block | SeriesID Set | TombstoneSeriesIDSet | SeriesSketch | TombstoneSketch | Trailer |
-| :----: | :------------: | :---------------: | :----------: | :------------------: | ------------ | --------------- | ------- |
-| 4 Byte |                |                   |              |                      |              |                 | 82 Byte |
-
-
-
+其中Header中的10个属性比较直观，Magic固定位`SIDX`，Capacity代表Block中的数量。两个Block中的Entry并不是连续存储。Entry中的Offset 和ID分别占用8个Byte。两个Block通过mmap映射，Entry通过hash存储。hash的key分别为Series key和Series ID。比如通过key找ID，先从keyIDMap中看是否存在，如果不存在则计算出hashcode(一个int值)，计算出该key在OffsetIDBolck中的偏移量，取出entry从而得到id。如果通过ID找Key，先从idOffsetMap中看是否存series key在Series Segment中的偏移量，如果不存在则去IDOffsetBlock中取偏移量。然后再去Series Segment中拿到series key。
 
 #### TSM File 
 
@@ -198,5 +181,22 @@ Footer用于存储索引起点的偏移量，方便将索引信息加载到内�
 ```
 
 //TODO  间接索引？
+
+#### TSI 
+
+默认配置下索引信息存放于内存中，`index-version="tsi1"`配置作用是将索引信息持久化至硬盘，TSI索引主要包含tsl、tsi文件，其实Series 文件也算。tsl、tsi文件位于在每个shard中`index`目录下。
+
+##### TSL
+
+##### TSI
+
+当TSL文件大小达到配置的compaction阈值时（由配置文件中的max-index-log-file-size指定，默认为1M），TSL文件会compaction成TSI文件，TSI文件算是存储格式最为复杂的。
+
+| Magic  | Tag Set Blocks | Measurement Block | SeriesID Set | TombstoneSeriesIDSet | SeriesSketch | TombstoneSketch | Trailer |
+| :----: | :------------: | :---------------: | :----------: | :------------------: | ------------ | --------------- | ------- |
+| 4 Byte |                |                   |              |                      |              |                 | 82 Byte |
+
+
+
 
 #### InfluxDB存储总结
