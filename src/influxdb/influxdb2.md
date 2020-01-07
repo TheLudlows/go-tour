@@ -87,7 +87,9 @@ keyIDMap    *rhh.HashMap // Series key到ID
 idOffsetMap map[SeriesID]int64 // ID到Series key 在Series segment file中的坐标即索引信息
 ```
 
-当然这两个map不会保存全部的key/value，它只会保存新插入的key和ID，当元素数量到达128k，将索引数据写入个Series Sement同目录下的Index文件，每一个分区都对应一个Index文件。
+当然这两个map不会保存全部的key/value，当map中元素数量到达128k，将索引数据写入个Series Sement同目录下的Index文件，每一个分区都对应一个Index文件。
+
+Index文件有三部分组成，分别是Header，OffsetIDBolck、IDOffsetBlock。
 
 
 
