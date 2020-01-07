@@ -62,37 +62,36 @@ influxdb/
 
 #### Series File
 
-_series目录保存了所有当前库下所有的Series key与Series Id的映射关系， id <-> series key数据基于id求余分区，分到8个目录中，在分区目录中在进行分文件存储，即超过256M就新开一个文件，防止文件过大。分区中的每个文件又称为Series segment。下面看segment的存储格式
+_series目录保存了所有当前库下所有的Series key与Series ID的映射关系， ID<-> series key数据基于ID求余分区，分到8个目录中，在分区目录中在进行分文件存储，即超过256M就新开一个文件，防止文件过大。分区中的每个文件又称为Series segment。下面看segment的存储格式
 
-```
-+--------+---------+-------+-------+------+
-| Magic  | version | Entry | Entry | ...  |  
-| 4 bytes| 1 bytes |   N   |   N   | ...  |  
-+--------+---------+-------+-------+------+
-```
+|  Magic  | version | Entry | Entry | ...  |
+| :-----: | :-----: | :---: | :---: | :--: |
+| 4 bytes | 1 bytes |   N   |   N   | ...  |
 
-Magic占4byte，固定值为SSEG，意思就是Series segment，主要看Entry结构。
-```
-+------------------------------------------------------------------------------------+
-|                                   Series Entry                                   |
-+---------+----------+---------+-----------------+-------------+----------+----------+
-|  Flag   │ SeriesId |  Size   │ MeasurementSize | Measurement | TagCount |   Tags   |
-| 1 bytes │  8 byte  | N bytes │      2 byte     |    N byte   |  N byte  |  N byte  |
-+--------------------+---------------------------+-------------+----------+----------+
-```
+Magic占4byte，固定值为`SSEG`，意思就是Series segment，主要看Entry结构。
+
+|  Flag  | SeriesId |  Size   | MeasurementSize | Measurement | TagCount |  Tags  |
+| :----: | :------: | :-----: | :-------------: | :---------: | :------: | :----: |
+| 1 byte |  8 byte  | N bytes |     2 byte      |   N byte    |  N byte  | N byte |
 
 Flag标记Series key是新加还是删除，SeriesId对应一个int64。Size表示Series key的长度，TagCount表示tag的数量。这里用了varint变长编码，Series key的长度基本上会小于127，因此这种编码压缩方式基本上只会占用一个字节，TagCount同理。Tags是由多个Tag组成，具体格式如下。
 
-```
-+-------------------------------------------------------+
-|                     Tag                               |
-+----------------+---------+----------------+-----------+
-|  Tag key size  │ tag key | Tag value size │ tag value |
-|    2 bytes     │  N byte |    2 bytes     │   N byte  |
-+----------------+---------+----------------+-----------+
+| Tag key size | tag key | Tag value size | tag value |
+| :----------: | :-----: | :------------: | :-------: |
+|   2 bytes    | N byte  |    2 bytes     |  N byte   |
+
+当新的SeriesKey到来，根据`(ID-1)%8`分区追加到对应的分区文件中。同时内存中保留了索引， 每个分区对应两个map。
+
+```go
+keyIDMap    *rhh.HashMap // Series key到ID
+idOffsetMap map[SeriesID]int64 // ID到Series key 在Series segment file中的坐标即索引信息
 ```
 
-这里笔者有一个疑问，为何 Tag key size 和 Tag value size 没有使用varint方式编码？
+当然这两个map不会保存全部的key/value，它只会保存新插入的key和ID，当元素数量到达128k，将索引数据写入个Series Sement同目录下的Index文件，每一个分区都对应一个Index文件。
+
+
+
+
 
 
 

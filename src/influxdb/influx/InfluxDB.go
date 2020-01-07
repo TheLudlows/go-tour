@@ -96,13 +96,13 @@ func (influx *InfluxDB) Insert(tags *map[string]string, fields *map[string]inter
 		log.Fatal(err)
 	}
 	influx.bps.AddPoint(pt)
-	if len(influx.bps.Points()) == 1000 {
-		if err := influx.Client.Write(influx.bps); err != nil {
-			log.Fatal(err)
-		}
-		influx.bps, _ = client.NewBatchPoints(client.BatchPointsConfig{
-			Database:  influx.Db,
-			Precision: influx.Precision,
-		})
+	//if len(influx.bps.Points()) == 1000 {
+	if err := influx.Client.Write(influx.bps); err != nil {
+		log.Fatal(err)
 	}
+	influx.bps, _ = client.NewBatchPoints(client.BatchPointsConfig{
+		Database:  influx.Db,
+		Precision: influx.Precision,
+	})
+	//}
 }

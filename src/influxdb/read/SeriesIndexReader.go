@@ -62,9 +62,3 @@ func main() {
 	fmt.Println(bytesToInt32(IDOffsetMapData[28:32]))
 
 }
-func bytesToInt64(buf []byte) int64 {
-	return int64(binary.BigEndian.Uint64(buf))
-}
-func bytesToInt32(buf []byte) int32 {
-	return int32(binary.BigEndian.Uint32(buf))
-}

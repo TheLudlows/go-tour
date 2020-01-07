@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"encoding/binary"
 	"fmt"
 	"log"
 	"os"
@@ -34,11 +33,4 @@ func main() {
 	fmt.Println(BytesToInt64(offBytes[72:80]))
 	fmt.Println(bytesToInt16(offBytes[80:82]))
 
-}
-func BytesToInt64(buf []byte) int64 {
-	return int64(binary.BigEndian.Uint64(buf))
-}
-
-func bytesToInt16(buf []byte) int16 {
-	return int16(binary.BigEndian.Uint16(buf))
 }

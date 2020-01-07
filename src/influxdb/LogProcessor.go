@@ -119,7 +119,7 @@ func initDBClient() *influx.InfluxDB {
 		Url:       "http://127.0.0.1:8086",
 		Name:      "admin",
 		Pwd:       "",
-		Db:        "testdb12",
+		Db:        "testdb13",
 		Mmt:       "mytable",
 		Precision: "ms",
 	}
@@ -149,20 +149,13 @@ func mock_data(path string) {
 func mock_data1(client *influx.InfluxDB) {
 
 	rand.Seed(6)
-	i := 0
-	for {
-		i++
+	for i := 0; i < 32; i++ {
 		tags := map[string]string{}
 		field := map[string]interface{}{}
-		tags["value"] = fmt.Sprint(rand.Int())
+		tags["value"] = fmt.Sprint(i)
 
-		field["data"] = fmt.Sprint(time.Now().Unix())
-		field["event"] = rand.Int()
+		field["data"] = fmt.Sprint(i)
+		field["event"] = i
 		client.Insert(&tags, &field)
-
-		if i%10000 == 0 {
-			fmt.Println("insert total ", i)
-			time.Sleep(1 * time.Second)
-		}
 	}
 }

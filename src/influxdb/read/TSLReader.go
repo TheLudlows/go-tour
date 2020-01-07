@@ -46,11 +46,3 @@ func main() {
 	fmt.Println(biu.BytesToBinaryString(idBytes1))*/
 
 }
-
-func BytesToInt16(buf []byte) int16 {
-	return int16(binary.BigEndian.Uint16(buf))
-}
-
-func BytesToInt32(buf []byte) int32 {
-	return int32(binary.BigEndian.Uint32(buf))
-}
