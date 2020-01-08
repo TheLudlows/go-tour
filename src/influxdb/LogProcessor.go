@@ -152,7 +152,7 @@ func mock_data1(client *influx.InfluxDB) {
 	for i := 0; i < 32; i++ {
 		tags := map[string]string{}
 		field := map[string]interface{}{}
-		tags["value"] = fmt.Sprint(i)
+		tags["value"] = fmt.Sprint(i / 10)
 
 		field["data"] = fmt.Sprint(i)
 		field["event"] = i

@@ -17,13 +17,13 @@ InfluxDB在经历了LSM Tree、B+Tree等几种尝试后，最终自研TSM，TSM�
 ##### 名词解释
 1. Shard
 上一篇文章中提到过这个概念，InfluxDB 中按照数据的时间戳所在的范围，会去创建不同的Shard Group，而Shard Group中会包含一个至多个Shard，单机版本中只有一个Shard。每一个 shard 都有自己的 cache、wal、tsm files 以及 compactor。
-2.WAL
-  wal 文件其作用就是为了防止系统崩溃导致的数据丢失。WAL是一种写优化的存储格式，允许持久写入，但不易于查询
-2. Cache
-  Cache是WAL中存储的数据的内存表示形式。达到一定阈值时与存储在TSM文件中的数据合并。
+2. WAL
+  wal 文件其作用就是为了防止系统崩溃导致的数据丢失。WAL是一种写优化的存储格式，允许持久写入，但不用于查询
+3. Cache
+  Cache是WAL中存储的数据的内存表示形式。缓存的目的是使WAL中的数据可查询。每次将点写入WAL段时，也会将其写入内存中的缓存。当缓存的数据达到阈值，则进行缓存快照，并开启WAL的Compaction，即将WAL中的数据写入TSM。当合并完成，则释放内存快照和WAL。
     ~~内存中暂存数据的地方，其实是一个map，key 为 seriesKey + FiledName，value为entry,具体实现为List<fieldkey,values>,values根据时间来排序。插入数据时，同时往 cache 与 wal 中写入数据，当Cache中的数据达到25M(默认)全部写入 tsm 文件。~~
-3. TSM
-4. Compactor
+4. TSM
+5. Compactor
 
 #### 文件目录介绍
 
@@ -58,7 +58,7 @@ influxdb/
 ```
 
 #### WAL
-新的Ponit到来时，首先将被序列化，使用Snappy压缩并通过`fsync`写入WAL文件，然后在加入到内存中。一个WAL文件被称为一个 segment。写入文件的格式基于TLV(Type-length-value)标准。其中第一个字节代表条目的类型（写或删除），一个4字节uint32代表压缩块的长度，然后是压缩块。文件大小达到10M，则关闭才文件并开一个文件。当Cache中的数据写入TSM文件中后会删除对应的WAL文件。
+新的Ponit到来时，会将被序列化，使用Snappy压缩并通过`fsync`写入WAL文件，然后在加入到内存中。一个WAL文件被称为一个 segment。写入文件的格式基于TLV(Type-length-value)标准。其中第一个字节代表条目的类型（写或删除），一个4字节uint32代表压缩块的长度，然后是压缩块。文件大小达到10M，则关闭才文件并开一个文件。当Cache中的数据写入TSM文件中后会删除对应的WAL文件。
 
 #### Series File
 
