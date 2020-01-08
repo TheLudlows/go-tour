@@ -16,14 +16,20 @@ InfluxDB在经历了LSM Tree、B+Tree等几种尝试后，最终自研TSM，TSM�
 ![1](./1.png)
 ##### 名词解释
 1. Shard
-上一篇文章中提到过这个概念，InfluxDB 中按照数据的时间戳所在的范围，会去创建不同的Shard Group，而Shard Group中会包含一个至多个Shard，单机版本中只有一个Shard。每一个 shard 都有自己的 cache、wal、tsm files 以及 compactor。
+  上一篇文章中提到过这个概念，InfluxDB 中按照数据的时间戳所在的范围，会去创建不同的Shard Group，而Shard Group中会包含一个至多个Shard，单机版本中只有一个Shard。每一个 shard 都有自己的 cache、wal、tsm files 以及 compactor。
+
 2. WAL
   wal 文件其作用就是为了防止系统崩溃导致的数据丢失。WAL是一种写优化的存储格式，允许持久写入，但不用于查询
+  
 3. Cache
   Cache是WAL中存储的数据的内存表示形式。缓存的目的是使WAL中的数据可查询。每次将点写入WAL段时，也会将其写入内存中的缓存。当缓存的数据达到阈值，则进行缓存快照，并开启WAL的Compaction，即将WAL中的数据写入TSM。当合并完成，则释放内存快照和WAL。
     ~~内存中暂存数据的地方，其实是一个map，key 为 seriesKey + FiledName，value为entry,具体实现为List<fieldkey,values>,values根据时间来排序。插入数据时，同时往 cache 与 wal 中写入数据，当Cache中的数据达到25M(默认)全部写入 tsm 文件。~~
+  
 4. TSM
+
 5. Compactor
+
+   中文为合并压缩，作用是将关闭的WAL文件的数据写入TSM文件，并删除WAL文件。将较小的TSM文件合并为较大的文件，以提高压缩率。重写包含已删除系列数据的现有文件。用包含最新数据的写操作重写现有文件，以确保仅在一个TSM文件中存在一个Point。合并操作一直在后台运行
 
 #### 文件目录介绍
 
@@ -58,7 +64,19 @@ influxdb/
 ```
 
 #### WAL
-新的Ponit到来时，会将被序列化，使用Snappy压缩并通过`fsync`写入WAL文件，然后在加入到内存中。一个WAL文件被称为一个 segment。写入文件的格式基于TLV(Type-length-value)标准。其中第一个字节代表条目的类型（写或删除），一个4字节uint32代表压缩块的长度，然后是压缩块。文件大小达到10M，则关闭才文件并开一个文件。当Cache中的数据写入TSM文件中后会删除对应的WAL文件。
+新的Ponit到来时，会将被序列化，使用Snappy压缩并通过`fsync`写入WAL文件，然后在加入到内存中。一个WAL文件被称为一个 segment。写入文件的格式基于TLV(Type-length-value)标准。其中第一个字节代表条目的类型（写或删除），一个4字节uint32代表压缩块的长度，然后是压缩块。文件大小达到10M，则关闭才文件并开一个文件。当Cache对应的WAL文件中的数据写入TSM文件中后会删除对应的WAL文件。压缩块的格式也是有讲究的，比如执行了`insert log,server="s1" load=0.8,mem="2000m"`,我们知道server属于tag，load和mem的属于field，那么该语句产生的block块为（当然是解压后的格式）
+
+```
+1 23 log,server="s1"#!~#load 1 15784946436443802001 0.8 4 22 log,server="s1"#!~#mem 1 15784946436443802001 2000m   
+```
+
+下面是压缩前的格式描述，压缩是将数据写byte数组后压缩
+
+|  Type  | Key Len |  Key   | Count  |  Time  | Value  | ...  |  Type  | .... |
+| :----: | :-----: | :----: | ------ | :----: | :----: | :--: | :----: | :--: |
+| 1 byte | 2 byte  | N byte | 4 byte | 8 byte | N byte | ...  | 1 byte | .... |
+
+对照着上面的真实数据，Type值得field 的类型有五种类型int long string等，key指的是series key + filed，Count指的是filed value 的数量，因为我们这里只是插入一条数据，因此count是1，Value为field 的value，注意`...`中是Time和Value成对出现。接着就是下一个field的数据。另外一个ponit的所有filed value放入一个压缩块中。
 
 #### Series File
 

@@ -12,7 +12,9 @@ import (
 
 func main() {
 	fmt.Println("read")
-	file, e := os.Open("/Users/liuchao56/.influxdb/wal/testdb13/autogen/10/1")
+	//file, e := os.Open("/Users/liuchao56/.influxdb/wal/testdb13/autogen/10/1")
+	file, e := os.Open("H:/influxdb-1.7.9-1/influxdb/wal/mydb/autogen/3/1.wal")
+
 	if e != nil {
 		log.Print(fmt.Sprint("open file", e))
 	}
@@ -56,8 +58,8 @@ func main() {
 			break
 		case 4:
 			fmt.Println(" value:", string(deComp[n:n+8]))
-
 		}
+		n += 8
 
 	}
 	fmt.Println(a)
