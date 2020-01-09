@@ -7,9 +7,9 @@ import (
 )
 
 func main() {
-	var file = "/Users/liuchao56/.influxdb/data/testdb13/autogen/10/index/0/L0-00000001.tsl"
-	//file, e := os.Open("/Users/liuchao56/L0-00000002.tsl")
+	//var file = "/Users/liuchao56/.influxdb/data/testdb13/autogen/10/index/0/L0-00000001.tsl"
 
+	var file = "H:/influxdb-1.7.9-1/influxdb/data/mydb/autogen/3/index/4/L0-00000001.tsl"
 	bytes, _ := ioutil.ReadFile(file)
 	var len = 0
 	fmt.Println(bytes)

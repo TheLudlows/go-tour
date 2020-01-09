@@ -13,7 +13,7 @@ import (
 func main() {
 	fmt.Println("read")
 	//file, e := os.Open("/Users/liuchao56/.influxdb/wal/testdb13/autogen/10/1")
-	file, e := os.Open("H:/influxdb-1.7.9-1/influxdb/wal/mydb/autogen/3/1.wal")
+	file, e := os.Open("H:/influxdb-1.7.9-1/influxdb/wal/db1/autogen/5/1.wal")
 
 	if e != nil {
 		log.Print(fmt.Sprint("open file", e))
