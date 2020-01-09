@@ -1,37 +1,24 @@
 package main
 
 import (
-	"bufio"
 	"encoding/binary"
 	"fmt"
-	"log"
-	"os"
+	"io/ioutil"
 )
 
 func main() {
-	//file, e := os.Open("/Users/liuchao56/.influxdb/data/testdb12/autogen/4/index/0/L0-00000001.tsl")
-	file, e := os.Open("/Users/liuchao56/L0-00000002.tsl")
+	var file = "/Users/liuchao56/.influxdb/data/testdb13/autogen/10/index/0/L0-00000001.tsl"
+	//file, e := os.Open("/Users/liuchao56/L0-00000002.tsl")
 
-	if e != nil {
-		log.Print(fmt.Sprint("open file", e))
-	}
-
-	bufReader := bufio.NewReader(file)
-	line, _, _ := bufReader.ReadLine()
-
-	fmt.Println(len(line))
-
-	//return
-	fmt.Println(line)
-	length := 0
-	flag := line[0:1]
-	fmt.Println(flag)
-	length++
-
-	id, n := binary.Uvarint(line[length:])
+	bytes, _ := ioutil.ReadFile(file)
+	var len = 0
+	fmt.Println(bytes)
+	fmt.Println("flag ", bytes[:1])
+	len += 1
+	id, n := binary.Uvarint(bytes[len:])
 	fmt.Println(id, n)
-	length += n
-	fmt.Println(string(line[3:9]))
+	len += n
+	fmt.Println(string(bytes[len+3:]))
 
 	/*len := BytesToInt32(mBytes)
 	lenBytes := make([] byte,len)

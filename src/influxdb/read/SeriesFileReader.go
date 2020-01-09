@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	file, e := os.Open("/Users/liuchao56/.influxdb/data/testdb13/_series/07/0000")
+	file, e := os.Open("/Users/liuchao56/.influxdb/data/testdb13/_series/00/0000")
 	if e != nil {
 		log.Print(fmt.Sprint("open file", e))
 	}
