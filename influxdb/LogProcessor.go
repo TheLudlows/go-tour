@@ -3,7 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"influxdb/influx"
+	"go-tour/influxdb/influx"
 	"io"
 	"log"
 	"math/rand"
