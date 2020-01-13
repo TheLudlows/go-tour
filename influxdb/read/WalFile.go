@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/golang/snappy"
-	"influxdb/utils"
+	"go-tour/influxdb/utils"
 	"io"
 	"log"
 	"os"

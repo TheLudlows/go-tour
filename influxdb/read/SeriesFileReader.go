@@ -3,7 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"influxdb/utils"
+	"go-tour/influxdb/utils"
 	"io"
 	"log"
 	"os"

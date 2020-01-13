@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"influxdb/utils"
+	"go-tour/influxdb/utils"
 	"io/ioutil"
 )
 
