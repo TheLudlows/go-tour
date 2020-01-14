@@ -1,24 +1,16 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"go-tour/influxdb/utils"
-	"log"
-	"os"
+	"io/ioutil"
 )
 
 func main() {
-	file, e := os.Open("/Users/liuchao56/L1-00000001.tsi")
-	if e != nil {
-		log.Print(fmt.Sprint("open file", e))
-	}
+	file := "/Users/liuchao56/1"
+	data, _ := ioutil.ReadFile(file)
 
-	file.Seek(-82, 2)
-	bufReader := bufio.NewReader(file)
-
-	offBytes := make([]byte, 82)
-	bufReader.Read(offBytes)
+	offBytes := data[len(data)-82:]
 
 	fmt.Println(offBytes)
 	fmt.Println(utils.BytesToInt64(offBytes[:8]))
@@ -31,6 +23,6 @@ func main() {
 	fmt.Println(utils.BytesToInt64(offBytes[56:64]))
 	fmt.Println(utils.BytesToInt64(offBytes[64:72]))
 	fmt.Println(utils.BytesToInt64(offBytes[72:80]))
-	fmt.Println(utils.BytesToInt64(offBytes[80:82]))
+	fmt.Println(utils.BytesToInt16(offBytes[80:82]))
 
 }
