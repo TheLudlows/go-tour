@@ -23,7 +23,7 @@ InfluxDB在经历了LSM Tree、B+Tree等几种尝试后，最终自研TSM，TSM�
   
 3. Cache
   Cache是WAL中存储的数据的内存表示形式。缓存的目的是使WAL中的数据可查询。每次将点写入WAL段时，也会将其写入内存中的缓存。当缓存的数据达到阈值，则进行缓存快照，并开启WAL的Compaction，即将WAL中的数据写入TSM。当合并完成，则释放内存快照和WAL。
-    ~~内存中暂存数据的地方，其实是一个map，key 为 seriesKey + FiledName，value为entry,具体实现为List<fieldkey,values>,values根据时间来排序。插入数据时，同时往 cache 与 wal 中写入数据，当Cache中的数据达到25M(默认)全部写入 tsm 文件。~~
+    ~~内存中暂存数据的地方，其实是一个map，key 为 seriesKey + File。dName，value为entry,具体实现为List<fieldkey,values>,values根据时间来排序。插入数据时，同时往 cache 与 wal 中写入数据，当Cache中的数据达到25M(默认)全部写入 tsm 文件。~~
   
 4. TSM
 
@@ -143,7 +143,7 @@ Data Blocks 内部是一些连续的 Block，block 是 InfluxDB 中的最小读�
 - Timestamp: 将时间按列使用delta-delta编码压缩
 - Value: 将FieldValue值按列进行压缩，不同类型的FieldValue使用不同的压缩算法
 
-Index Block是对key的索引，首先按键顺序排列，然后按时间排序。key就是Series key + 分隔符 + Field name。有些key对应的数据放在多个block中，那么该index block就会有多个index entry。
+Index Block是对key的索引，首先按键字典顺序排列，然后按时间排序。key就是Series key + 分隔符 + Field name。有些key对应的value数据放在多个data block中，那么该index block就会有多个index entry。
 
 | Key Len |  Key   |  Type  | Count  | Index Entry | ...  |
 | ------- | :----: | :----: | :----: | :---------: | ---- |
@@ -167,21 +167,13 @@ Index Entry 格式如下
 
 Footer用于存储索引起点的偏移量占8 bytes ，方便将索引信息加载到内存中。
 
-#### TSI 
+为了方便查到Index Block中的key，在内存中有对每个Index Block的地址索引，因为Index Block时有序的，但IndexBlock的大小不确定，因此记录下每个Block的偏移地址方便进行二分查找。
 
-默认配置下索引信息存放于内存中，`index-version="tsi1"`配置作用是将索引信息持久化至硬盘，TSI索引主要包含tsl、tsi文件，其实Series 文件也算。tsl、tsi文件位于在每个shard中`index`目录下。
+```
+ ┌────────────────────────────────────────────────────────────────────┐
+ │                              Offsets                               │
+ ├────┬────┬────┬─────────────────────────────────────────────────────┘
+ │ 0  │ 62 │145 │
+ └────┴────┴────┘
+```
 
-##### TSL
-
-##### TSI
-
-当TSL文件大小达到配置的compaction阈值时（由配置文件中的max-index-log-file-size指定，默认为1M），TSL文件会compaction成TSI文件，TSI文件算是存储格式最为复杂的。
-
-| Magic  | Tag Set Blocks | Measurement Block | SeriesID Set | TombstoneSeriesIDSet | SeriesSketch | TombstoneSketch | Trailer |
-| :----: | :------------: | :---------------: | :----------: | :------------------: | ------------ | --------------- | ------- |
-| 4 Byte |                |                   |              |                      |              |                 | 82 Byte |
-
-
-
-
-#### InfluxDB存储总结

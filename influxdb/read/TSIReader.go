@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/binary"
 	"fmt"
 	"go-tour/influxdb/utils"
 	"io/ioutil"
@@ -29,7 +30,7 @@ func main() {
 	magic := data[:4]
 	fmt.Println(string(magic))
 
-	readMeasurementBlock(data[measurementOff : measurementOff+measurementSize])
+	//readMeasurementBlock(data[measurementOff : measurementOff+measurementSize])
 	readTagSet(data[4:measurementOff])
 
 }
@@ -57,8 +58,8 @@ func readMeasurementBlock(data []byte) {
 }
 func readTagSet(data []byte) {
 
+	fmt.Println(data[0:10])
 	tail := data[len(data)-58:]
-	fmt.Println(tail)
 	fmt.Println("value off:", utils.BytesToInt64(tail[0:8]))
 	fmt.Println("value size:", utils.BytesToInt64(tail[8:16]))
 	fmt.Println("key off:", utils.BytesToInt64(tail[16:24]))
@@ -68,4 +69,38 @@ func readTagSet(data []byte) {
 	fmt.Println("total size:", utils.BytesToInt64(tail[48:56]))
 	fmt.Println("version:", tail[56:58])
 
+	data = readTagValue(data[1:])
+	data = readTagValue(data)
+	data = readTagValue(data)
+	data = readTagValue(data)
+	data = readTagValue(data)
+	data = readTagValue(data)
+	data = readTagValue(data)
+
+}
+func readTagValue(data []byte) []byte {
+	var flag byte
+	flag, data = data[0], data[1:]
+	fmt.Println("flag:", flag)
+
+	var n int
+	var size uint64
+	size, n = binary.Uvarint(data)
+	fmt.Println("size:", size)
+	data = data[n:]
+	fmt.Println("tag value:", string(data[:size]))
+	data = data[size:]
+
+	var count uint64
+	count, n = binary.Uvarint(data)
+	data = data[n:]
+	fmt.Println("series count", count)
+
+	var seriesSize uint64
+	seriesSize, n = binary.Uvarint(data)
+	data = data[n:]
+	fmt.Println("series size", seriesSize)
+	fmt.Println((data[:seriesSize]))
+	data = data[seriesSize:]
+	return data
 }
