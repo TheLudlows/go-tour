@@ -30,14 +30,14 @@ func main() {
 	magic := data[:4]
 	fmt.Println(string(magic))
 
-	readMeasurementBlock(data[measurementOff : measurementOff+measurementSize])
-	//readTagSet(data[4:measurementOff])
+	//readMeasurementBlock(data[measurementOff : measurementOff+measurementSize])
+	readTagSet(data[4:measurementOff])
 
 }
 
 func readMeasurementBlock(data []byte) {
 
-	// tail
+	// trailer
 	tail := data[len(data)-66:]
 	memOff := utils.BytesToInt64(tail[0:8])
 	memSize := utils.BytesToInt64(tail[8:16])
@@ -68,6 +68,7 @@ func readMeasurementBlock(data []byte) {
 	mem2Data := memData[mem2Off:]
 	var flag byte
 	flag, mem2Data = mem2Data[0], mem2Data[1:]
+	fmt.Println("Measurement data size", len(mem2Data))
 	fmt.Println("Measurement 2 flag:", flag)
 
 	fmt.Println("tag off:", utils.BytesToInt64(mem2Data[:8]))
@@ -82,7 +83,7 @@ func readMeasurementBlock(data []byte) {
 
 	// series count
 	count, n := binary.Uvarint(mem2Data)
-	fmt.Println("series  count:", count)
+	fmt.Println("series count:", count)
 	mem2Data = mem2Data[n:]
 	// series size
 	seriesSize, n := binary.Uvarint(mem2Data)
@@ -92,6 +93,7 @@ func readMeasurementBlock(data []byte) {
 }
 func readTagSet(data []byte) {
 
+	// trailer
 	tail := data[len(data)-58:]
 	fmt.Println("value off:", utils.BytesToInt64(tail[0:8]))
 	fmt.Println("value size:", utils.BytesToInt64(tail[8:16]))
@@ -101,6 +103,13 @@ func readTagSet(data []byte) {
 	fmt.Println("hash size:", utils.BytesToInt64(tail[40:48]))
 	fmt.Println("total size:", utils.BytesToInt64(tail[48:56]))
 	fmt.Println("version:", tail[56:58])
+
+	// read index
+	indexOff, indexSize := utils.BytesToInt64(tail[32:40]), utils.BytesToInt64(tail[40:48])
+	indexData := data[indexOff : indexSize+indexOff]
+	fmt.Println("tag key index count:", utils.BytesToInt64(indexData[0:8]))
+	fmt.Println("tag key index off1:", utils.BytesToInt64(indexData[8:16]))
+	fmt.Println("tag key index off2:", utils.BytesToInt64(indexData[16:24]))
 
 	data = readTagValue(data[1:])
 	start := len(data)
