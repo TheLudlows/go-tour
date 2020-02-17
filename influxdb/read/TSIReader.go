@@ -111,12 +111,32 @@ func readTagSet(data []byte) {
 	fmt.Println("tag key index off1:", utils.BytesToInt64(indexData[8:16]))
 	fmt.Println("tag key index off2:", utils.BytesToInt64(indexData[16:24]))
 
-	data = readTagValue(data[1:])
-	start := len(data)
+	//read key
+	keyOff := utils.BytesToInt64(indexData[16:24])
+	keyData := data[keyOff:]
+	fmt.Println("tag key flag:", keyData[:1])
+	fmt.Println("tag key rep values offSize:", utils.BytesToInt64(keyData[1:9]))
+	fmt.Println("tag key rep values size:", utils.BytesToInt64(keyData[9:17]))
+	fmt.Println("tag key rep values index offSize:", utils.BytesToInt64(keyData[17:25]))
+	fmt.Println("tag key rep values index size:", utils.BytesToInt64(keyData[25:33]))
+	valueIndexOff, valueIndexSize := utils.BytesToInt64(keyData[17:25]), utils.BytesToInt64(keyData[25:33])
 
-	fmt.Println("read ", len(data)-start)
+	keyData = keyData[33:]
+	keySize, n := binary.Uvarint(keyData)
+	fmt.Println("tag key size:", keySize)
+	keyData = keyData[n:]
+	fmt.Println("key is:", string(keyData[:keySize]))
+
+	// read values index
+	fmt.Println(valueIndexOff, valueIndexSize)
+	valueIndexData := data[valueIndexOff : valueIndexOff+valueIndexSize]
+	fmt.Println("index count is:", utils.BytesToInt64(valueIndexData[0:8]))
+	fmt.Println("value 1 off is:", utils.BytesToInt64(valueIndexData[8:16]))
+	fmt.Println("value 2 off is:", utils.BytesToInt64(valueIndexData[16:24]))
+
+	readTagValue(data[utils.BytesToInt64(valueIndexData[8:16]):])
 }
-func readTagValue(data []byte) []byte {
+func readTagValue(data []byte) {
 	var flag byte
 	flag, data = data[0], data[1:]
 	fmt.Println("flag:", flag)
@@ -124,7 +144,6 @@ func readTagValue(data []byte) []byte {
 	var n int
 	var size uint64
 	size, n = binary.Uvarint(data)
-	fmt.Println("size:", size)
 	data = data[n:]
 	fmt.Println("tag value:", string(data[:size]))
 	data = data[size:]
@@ -138,7 +157,5 @@ func readTagValue(data []byte) []byte {
 	seriesSize, n = binary.Uvarint(data)
 	data = data[n:]
 	fmt.Println("series size", seriesSize)
-	fmt.Println(string(data[:seriesSize]))
-	data = data[seriesSize:]
-	return data
+	fmt.Println("series data is ", data[:seriesSize])
 }
