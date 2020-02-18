@@ -134,9 +134,13 @@ func readTagSet(data []byte) {
 	fmt.Println("value 1 off is:", utils.BytesToInt64(valueIndexData[8:16]))
 	fmt.Println("value 2 off is:", utils.BytesToInt64(valueIndexData[16:24]))
 
-	readTagValue(data[utils.BytesToInt64(valueIndexData[8:16]):])
+	valueData := readTagValue(data[utils.BytesToInt64(valueIndexData[8:16]):])
+	valueData = readTagValue(valueData)
+	valueData = readTagValue(valueData)
+	valueData = readTagValue(valueData)
+
 }
-func readTagValue(data []byte) {
+func readTagValue(data []byte) []byte {
 	var flag byte
 	flag, data = data[0], data[1:]
 	fmt.Println("flag:", flag)
@@ -158,4 +162,6 @@ func readTagValue(data []byte) {
 	data = data[n:]
 	fmt.Println("series size", seriesSize)
 	fmt.Println("series data is ", data[:seriesSize])
+	data = data[seriesSize:]
+	return data
 }
