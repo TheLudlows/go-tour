@@ -97,3 +97,7 @@ defer类似于Java中的final语句块，即被defer申明的语句一定会被�
 panic是go内部的一个方法，类似于Java的throw关键字，正常的函数执行流程将立即终止，并将错误信息上报，defer声名的语句会被执行
 recover方法是接受panic的错误信息，类似于catch
 三者配合使用见[Error.go](src/basic/Error2.go)
+#### 
+值类型：变量直接存储的值，内存通常在栈中分配，int、float、bool、string、数组、struct。
+引用类型：变量存储的是一个地址，这个地址存储最终的值。内存通常在堆上分配，当没有任何变量引用这个地址时，该地址对应的数据空间就成为一个垃圾，通过GC回收。
+ref r--->地址--->值，包括 指针、slice、map、chan、接口

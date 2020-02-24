@@ -20,6 +20,8 @@ func main() {
 
 	var printer Printer
 	printer = new(MyPrinter)
+	p := printer.print
+	p("you")
 	printer.print("four")
 	var v1 interface{} = 1
 	fmt.Println(reflect.TypeOf(v1))
