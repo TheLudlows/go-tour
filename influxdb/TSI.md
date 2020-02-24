@@ -16,16 +16,16 @@
 | :----: | :--------: | :---------------: | :----------: | :------------------: | ------------ | --------------- | ------- |
 | 4 Byte |            |                   |              |                      |              |                 | 82 Byte |
 
-- Magic：占用4Byte，1.79版本位`TSI1`
+- Magic：占用4Byte，1.79版为`TSI1`
 - Tag Blocks：每个Measurement占用拥有一个Tag Block，Tag Block中保存tag value相关信息。
-- Measurement Block：Measurement Block保存所有的Measurement信息，通过Measurement可以获取到Tag Block的地址。
-- SeriesID Set
-- TombstoneSeriesIDSet：
+- Measurement Block：Measurement Block保存所有的Measurement信息，通过Measurement可以获取到该Measurement对应Tag Block的地址。
+- SeriesID Set：采用Roaring Bitmap记录当前文件中的SeriesID
+- TombstoneSeriesIDSet：删除的SeriesID
 - SeriesSketch：HyhperLogLog++结构记数
 - TombstoneSketch：上同
 - Trailer：记录每个Block的的地址和大小
 
-其中最为重要的是Measurement Block和Tag Blocks，先从Measurement Block看起，因为Measurement Block中有Tag Block的索引。先来看Measurement Block的结构
+其中最为重要的是Measurement Block和Tag Blocks，因为Measurement Block中有Tag Block的索引。先来看Measurement Block的结构
 
 | Measurements | HashIndex | Measurements Sketch | Measurements TombStone Sketch | Trailer |
 | ------------ | --------- | ------------------- | ----------------------------- | ------- |
@@ -60,7 +60,7 @@ TagBlock保存了某个Measurement的Tagkey和TagValue，前面我们根据Measu
 Flag表示是否删除，0表示未删除，Values Offsize表示key对应的Tag Block Value Iterator的地址，对于多个value如何快速的找到某个具体Value，这里就需要对value进行索引，这就是Values index的作用，每个Tag Block Value Iterator都一个ValueIndex。Values index offSize表示该Tag Block Value Iterator的地址。接下里是key size采用变长编码，key name就是 tag key。通过TagBlockKeyElem获取到了Tag Block Value Iterator的地址以及Values index offSize，我们可以通过Index获取到任意一个value的信息，接下里看Tag Block Value Iterator中的TagBlockValueElem结构
 
 | Flag   | Value size | Value | Series count | Series size | Series data |
-| ------ | ---------- | ----- | ------------ | ----------- | ----------- |
-| 1 Byte | -          | -     | -            | -           | -           |
+| ------ | :--------: | :---: | :----------: | ----------- | :---------: |
+| 1 Byte |     -      |   -   |      -       | -           |      -      |
 
 Flag表示该value对应的Series data的编码方式，Roaring bitmap或者原生varint编码，Value size、Series count、Series size采用varint编码。在讲述Measurement Block中也提到了Series data ，Measurement Block中的Series data保存了当前文件中该Measurement拥有的所有的Series ID（bitmap存储），而在TagBlockValueElem中的Series data 保存了该Value对应的Series ID。
