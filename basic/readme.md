@@ -29,6 +29,19 @@ const identifier [type] = value
 
 #### 权限
 Go语言没有像其它语言一样有public、protected、private等访问控制修饰符，它是通过字母大小写来控制可见性的，如果定义的常量、变量、类型、接口、结构、函数等的名称是大写字母开头表示能被其它包访问或调用（相当于public），非大写开头就只能在包内使用（相当于private，变量或常量也可以下划线开头）
+
+#### 匿名字段
+匿名字段不过是⼀种语法糖，从根本上说，就是⼀个与成员类型同名 (不含包名) 的字段。
+被匿名嵌⼊的可以是任何类型，当然也包括指针。
+```go
+type User struct {
+ name string
+}
+type Manager struct {
+ User
+ title string
+}
+```
 #### 函数定义
 ```go
 func function_name( [parameter list] ) [return_types] {
@@ -45,6 +58,8 @@ println(addFunc(999 , 1))
 ```
 函数可以作为参数传递,
 参数列表可以改为（a,b int）
+
+⽅法总是绑定对象实例，并隐式将实例作为第⼀实参,可⽤实例 value 或 pointer 调⽤全部⽅法，编译器⾃动转换。可以像字段成员那样访问匿名字段⽅法，编译器负责查找。
 
 #### 变量作用域
 - 函数内定义的变量称为局部变量
@@ -87,7 +102,7 @@ type IFile interface {
 }
 ```
 
-任何对象实例都满足空接口interface{}
+任何对象实例都满足空接口interface{},类型可实现多个接⼝。
 
 `var v1 interface{} = 1`
 
