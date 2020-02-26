@@ -4,9 +4,36 @@
 
 #### TSI 
 
-默认配置下索引信息存放于内存中，`index-version="tsi1"`配置作用是将索引信息持久化至硬盘，TSI索引主要包含logFile文件(.tsl结尾)、tsi文件，其实Series 文件也算。tsl、tsi文件位于在每个shard中`index`目录下。
+默认配置下索引信息存放于内存中，`index-version="tsi1"`配置作用是将索引信息持久化至硬盘，TSI索引主要包含logFile文件(.tsl结尾)、tsi文件，其实Series 文件也算。tsl、tsi文件位于在每个shard中`index`目录下。索引是对tag的索引，即某个tagvalue有哪些对应的SeriesID。
 
 ##### LogFile
+
+索引文件是以不断合并的方式构建，从而达到更好的索引效果，不可能每新增一条索引数据就往向索引文件中写入，主要原因有一是大量的随机写效率不高，二是导致索引文件整体变化，可能每增一个变化一次。因此可以将数据暂存于一个地方，达到一定程度在后台进行与旧的索引文件合并。
+
+Logfile就是暂存索引数据的作用，被构造为LogEntry对象的列表并按顺序写入磁盘的。直到它们达到1MB，然后将其压缩为索引文件。正因为它是追加写的，如果在没有被合并入索引文件前，需要用到这些数据，读文件是不合理的，因此在内存中有一份和logfile内容相同并且利于查询的数据结构。
+
+```GO
+// In-memory series existence/tombstone sets.
+seriesIDSet, tombstoneSeriesIDSet *tsdb.SeriesIDSet
+// In-memory index.
+mms logMeasurements
+// In-memory stats
+stats MeasurementCardinalityStats
+```
+
+seriesIDSet为logfile中的series id，可以看做roaring bitmap类型，mms是一个map，通过Measurement name来找到Measurement。stats用于统计。其中Measurement内部包含了它所有的tagkey和tagvalue。
+
+LogEntry有五种类型：
+
+1. AddSeries
+2. DeleteSeries
+3. DeleteMeasurement
+4. DeleteTagKey
+5. DeleteTagValue
+
+LogEntry在Logfile中的格式如下：
+
+
 
 ##### Index File
 
