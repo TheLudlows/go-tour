@@ -33,7 +33,11 @@ LogEntry有五种类型：
 
 LogEntry在Logfile中的格式如下：
 
+|  Flag  | Series ID | Measurement size | Measurement name | Tagkey size | Tagkey | Value Size | Value | CheckSum |
+| :----: |  :-------: | :--------------: | :--------------: | :---------: | :----: | :--------: | :---: | :------: |
+| 1 Byte | - | - | - | - | - | - | - | 4Byte |
 
+Flag表示五种类型的LogEntry，Series ID和其他的size字段采用边长编码。
 
 ##### Index File
 
