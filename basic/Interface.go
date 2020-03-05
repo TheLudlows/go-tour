@@ -27,4 +27,17 @@ func main() {
 	fmt.Println(reflect.TypeOf(v1))
 	fmt.Println(&v1)
 
+	type User struct {
+		id   int
+		name string
+	}
+
+	u := User{1, "Tom"}
+	var i interface{} = u
+	u.id = 2
+	u.name = "Jack"
+	fmt.Println(i.(User).id)
+	fmt.Printf("%v\n", u)
+	fmt.Printf("%v\n", i.(User))
+
 }
