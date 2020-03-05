@@ -134,9 +134,9 @@ Data Blocks 内部是一些连续的 Block，block 是 InfluxDB 中的最小读�
 
 每个block内存储的是某个TimeSeries的一段时间范围内的值，即某个时间段下measurement+tag set+field的值，Block内部会根据field的不同的值的类型采取不同的压缩策略，以达到最优的压缩效率。Block具体格式如下
 
-|   CRC   | FieldValueType | TimeStamp Size | TimeStamp | value  | ...  |
-| :-----: | :------------: | :------------: | :-------: | :----: | ---- |
-| 4 bytes |    1 bytes     |     N byte     |  N byte   | N byte | ...  |
+|   CRC   | FieldValueType | TimeStamp Size | TimeStamp | value  | 
+| :-----: | :------------: | :------------: | :-------: | :----: | 
+| 4 bytes |    1 bytes     |     N byte     |  N byte   | N byte | 
 
 - FieldValueType: 表示该DataBlock存储的FieldValue类型，InfluxDB中存在5中FieldValueType: Float, Integer, Unsigned, Boolean, String
 - TimestampSize: 表示TimeStamps block的长度，使用可变长编码
