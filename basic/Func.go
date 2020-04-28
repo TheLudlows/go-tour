@@ -10,5 +10,4 @@ func main() {
 
 	f("bbbb")
 	panic(f("aaaaa"))
-
 }
