@@ -18,7 +18,7 @@ func main() {
 	}
 
 	fmt.Println(a)
-	updateArr(a) // 值传递
+	updateArr(&a) // 默认值传递
 	fmt.Println(a)
 	fmt.Println(b)
 	fmt.Println(c)
@@ -32,6 +32,6 @@ func main() {
 
 }
 
-func updateArr(a [3]int) {
+func updateArr(a *[3]int) {
 	a[0] = 88
 }

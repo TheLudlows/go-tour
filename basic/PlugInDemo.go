@@ -4,7 +4,11 @@ import (
 	"fmt"
 	"log"
 	"plugin"
+	"strings"
+	"unicode"
 )
+
+type aaa string
 
 func main() {
 	filename := "MyPlugin.so"
@@ -18,4 +22,10 @@ func main() {
 	}
 	helloF := helloFunc.(func(string) string)
 	fmt.Println(helloF("aaa"))
+	fmt.Println(aaa("bbbbb"))
+
+	fmt.Println(strings.FieldsFunc("aaaa bb", func(r rune) bool {
+		return !unicode.IsLetter(r)
+	}))
+
 }
