@@ -38,7 +38,7 @@ func main() {
 
 func error(body []byte) bool {
 	from := bytes.LastIndexByte(body, '|')
-	b := bytes.Index(body[from:], e1)
+	b := bytes.LastIndex(body[from:], e1)
 	if b > 0 {
 		return true
 	}

@@ -23,7 +23,7 @@ func init() {
 	threads = 4
 }
 func main() {
-	var url = "http://127.0.0.1:9000/trace1.data"
+	var url = "http://127.0.0.1:80/trace1.data"
 	fmt.Println(time.Now().Unix())
 	Download(url)
 	fmt.Println(time.Now().Unix())
